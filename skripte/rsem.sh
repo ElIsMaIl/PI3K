@@ -10,16 +10,18 @@
 #                       ~/work/PIP3K/ref_rsem/
 
 mkdir -p ~/work/PIP3K/test/
-cd ~/work/PIP3K/test/
 
-for ((i=4; i<=6; i++));
-do
-rsem-calculate-expression --p15 \
-                          --star \
-                          --output-genome-bam \
-                          ~/work/PIP3K/trimmed_reads/SRR95498${i}_trimmed_reads.fastq\
-                          ~/work/PIP3K/ref_rsem 
-done
+#for ((i=4; i<=6; i++));
+#do
+rsem-calculate-expression -p 15 \
+                          --estimate-rspd \
+                          --append-names \
+                          --no-bam-output \
+                      --bam ~/work/PIP3K/star_alignment/SRR954984_Aligned.toTranscriptome.out.bam \
+                      /fast/users/elismaim_c/work/PIP3K/ref_rsem/ref_rsem.grp \
+                      Test_exp 
+                          
+#done
 
 
 
