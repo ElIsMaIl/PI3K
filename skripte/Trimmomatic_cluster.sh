@@ -1,10 +1,12 @@
 #!/bin/bash
 
 echo "Trimming..."
-for f1 in ~/work/PIP3K/raw_data/*.fastq;
+for ((i=1; i<=3; i++));
 do
-trimmomatic SE -phred33 $f1 ${f1%%.fastq}"trimmed_reads.fq.gz"
-ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
+R1=$(ls ~/work/PIP3K/raw_data/SRR204954${i}_1.fastq)
+R2=$(ls ~/work/PIP3K/raw_data/SRR204954${i}_2.fastq)
+
+trimmomatic PE -phred33 ${R1} ${R2} ${R1}_1_paired.fq.gz ${R1}_1_unpaired.fq.gz ${R2}_2_paired.fq.gz ${R2}_2_unpaired.fq.gz ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 MINLEN:36 
 done
 
 #echo "mkdir for results..."

@@ -3,7 +3,8 @@
 echo "Trimming..."
 for f1 in ~/work/PIP3K/raw_data/*.fastq;
 do
- cutadapt -a file:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa -o ${f1%%.fastq}"_trimmed_reads.fastq.gz" $f1
+cutadapt -a
+file:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-PE.fa -o ${f1%%.fastq}"_trimmed_reads.fastq.gz" $f1
 done
 
 echo "mkdir for results..."
