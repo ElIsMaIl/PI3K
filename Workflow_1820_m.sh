@@ -75,12 +75,12 @@ done
 echo "Berechne Expressions Matriks..."
 for ((i=1; i<=8; i++));
 do
-stringtie ~/work/PIP3K/R_1820/Hisat2/align${i}.sorted.bam -l stringtie_${i} -p 20 -G ~/work/PIP3K/ref_files/gencodev29-20181205.gtf -o ~/work/PIP3K/R_1820/stringtie_assembly/stringtie_${i}.gtf
-stringtie --merge -p 20 -G ~/work/PIP3K/ref_files/gencodev29-20181205.gtf -o ~/work/PIP3K/R_1820/stringtie_assembly/stringtie_merged.gtf ~/work/PIP3K/R_1820/stringtie_assembly/stringtie_${i}.gtf
+stringtie ~/work/PIP3K/R_1820/Hisat2/align${i}.sorted.bam -l stringtie_${i} -p 20 -G ~/work/PIP3K/ref_files/gencode.vM23.primary_assembly.annotation.gtf -o ~/work/PIP3K/R_1820/stringtie_assembly/stringtie_${i}.gtf
+stringtie --merge -p 20 -G ~/work/PIP3K/ref_files/gencode.vM23.primary_assembly.annotation.gtf -o ~/work/PIP3K/R_1820/stringtie_assembly/stringtie_merged.gtf ~/work/PIP3K/R_1820/stringtie_assembly/stringtie_${i}.gtf
 done 
 
 cd ~/work/PIP3K/R_1820/stringtie_assembly
-gffcompare -r ~/work/PIP3K/ref_files/gencodev29-20181205.gtf -G -o merged stringtie_merged.gtf
+gffcompare -r ~/work/PIP3K/ref_files/gencode.vM23.primary_assembly.annotation.gtf -G -o merged stringtie_merged.gtf
 
 #Read Coverage Tables
 echo "Estimate Transcript abundances..."
