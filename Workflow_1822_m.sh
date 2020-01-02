@@ -4,7 +4,7 @@
 echo "Running fastqc..."
 cd  ~/work/PIP3K/raw_data/R_1822/
 
-#fastqc *.fastq
+fastqc *.fastq
 
 echo "mdkir for results_fastqc..."
 mkdir -p ~/work/PIP3K/R_1822/results_fastqc/

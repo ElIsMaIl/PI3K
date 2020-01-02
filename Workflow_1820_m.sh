@@ -1,60 +1,60 @@
 #!/bin/bash
 
 #Quality Controll raw_data
-#echo "Running fastqc..."
-#cd  ~/work/PIP3K/raw_data/R_1820/
+echo "Running fastqc..."
+cd  ~/work/PIP3K/raw_data/R_1820/
 
-#fastqc *.fastq
+fastqc *.fastq
 
-#echo "mdkir for results_fastqc..."
-#mkdir -p ~/work/PIP3K/R_1820/results_fastqc/
+echo "mdkir for results_fastqc..."
+mkdir -p ~/work/PIP3K/R_1820/results_fastqc/
 
-#echo "saving..."
-#mv *.zip   ~/work/PIP3K/R_1820/results_fastqc/
-#mv *.html  ~/work/PIP3K/R_1820/results_fastqc/
-#cd ~/work/PIP3K/R_1820/
+echo "saving..."
+mv *.zip   ~/work/PIP3K/R_1820/results_fastqc/
+mv *.html  ~/work/PIP3K/R_1820/results_fastqc/
+cd ~/work/PIP3K/R_1820/
 
 #Trimming
-#echo "starting the next step..."
-#echo "Trimming..."
-#for ((i=1; i<=8; i++));
-#do
-#R1=$(ls ~/work/PIP3K/raw_data/R_1820/1820_S1_L00${i}_R1_001.fastq)
-#R2=$(ls ~/work/PIP3K/raw_data/R_1820/1820_S1_L00${i}_R2_001.fastq)
+echo "starting the next step..."
+echo "Trimming..."
+for ((i=1; i<=8; i++));
+do
+R1=$(ls ~/work/PIP3K/raw_data/R_1820/1820_S1_L00${i}_R1_001.fastq)
+R2=$(ls ~/work/PIP3K/raw_data/R_1820/1820_S1_L00${i}_R2_001.fastq)
  
-#trimmomatic PE -phred33 -threads 30 ${R1} ${R2} ${R1}_1_paired.fastq.gz ${R1}_1_unpaired.fastq.gz  ${R2}_2_paired.fastq.gz  ${R2}_2_unpaired.fastq.gz  ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 MINLEN:20
-#done
+trimmomatic PE -phred33 -threads 30 ${R1} ${R2} ${R1}_1_paired.fastq.gz ${R1}_1_unpaired.fastq.gz  ${R2}_2_paired.fastq.gz  ${R2}_2_unpaired.fastq.gz  ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 MINLEN:20
+done
 
-#echo "mkdir for results_trimmed_reads..."
-#mkdir -p ~/work/PIP3K/R_1820/trimmed_reads/
+echo "mkdir for results_trimmed_reads..."
+mkdir -p ~/work/PIP3K/R_1820/trimmed_reads/
 
-#cd ~/work/PIP3K/raw_data/R_1820/
+cd ~/work/PIP3K/raw_data/R_1820/
  
-#echo "saving..."
-#mv *.fastq_1_paired.fastq.gz    ~/work/PIP3K/R_1820/trimmed_reads/
-#mv *.fastq_1_unpaired.fastq.gz  ~/work/PIP3K/R_1820/trimmed_reads/
-#mv *.fastq_2_paired.fastq.gz    ~/work/PIP3K/R_1820/trimmed_reads/
-#mv *.fastq_2_unpaired.fastq.gz  ~/work/PIP3K/R_1820/trimmed_reads/
-#cd ~/work/PIP3K/R_1820/trimmed_reads/
+echo "saving..."
+mv *.fastq_1_paired.fastq.gz    ~/work/PIP3K/R_1820/trimmed_reads/
+mv *.fastq_1_unpaired.fastq.gz  ~/work/PIP3K/R_1820/trimmed_reads/
+mv *.fastq_2_paired.fastq.gz    ~/work/PIP3K/R_1820/trimmed_reads/
+mv *.fastq_2_unpaired.fastq.gz  ~/work/PIP3K/R_1820/trimmed_reads/
+cd ~/work/PIP3K/R_1820/trimmed_reads/
  
-#for f in *.gz;
-#do
-#gunzip $f
-#done
+for f in *.gz;
+do
+gunzip $f
+done
 
 #Quality Controll trimmed_reads
-#echo "fastqc for trimmed_reads & saving..."
-#fastqc *.fastq
-#mkdir -p ~/work/PIP3K/R_1820/results_trimmed_reads_fastqc/
-#mv *.zip ~/work/PIP3K/R_1820/results_trimmed_reads_fastqc/
-#mv *.html ~/work/PIP3K/R_1820/results_trimmed_reads_fastqc/
+echo "fastqc for trimmed_reads & saving..."
+fastqc *.fastq
+mkdir -p ~/work/PIP3K/R_1820/results_trimmed_reads_fastqc/
+mv *.zip ~/work/PIP3K/R_1820/results_trimmed_reads_fastqc/
+mv *.html ~/work/PIP3K/R_1820/results_trimmed_reads_fastqc/
 
 #prepare-reference
-#echo "hisat2 reference build..."
-#mkdir -p ~/work/PIP3K/R_1820/Hisat2/
+echo "hisat2 reference build..."
+mkdir -p ~/work/PIP3K/R_1820/Hisat2/
 cd ~/work/PIP3K/R_1820/Hisat2/
  
-#hisat2-build -p 20 ~/work/PIP3K/ref_files/GRCm38.primary_assembly.genome.fa hisat2_ref
+hisat2-build -p 20 ~/work/PIP3K/ref_files/GRCm38.primary_assembly.genome.fa hisat2_ref
 
 #Alignment
 echo "starting the next step..."
