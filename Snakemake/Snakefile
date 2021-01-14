@@ -4,7 +4,7 @@ Affiliation: Student at Freie Universität Berlin
 Aim: Workflow for single cell RNA-Seq
 Date: Mon 08.April.2019
 Run: snakemake -s Snakefile
-Latest modification: 30.july.2019
+Latest modification: 14.01.2021
 """
  
 ##---------------------------------------##
