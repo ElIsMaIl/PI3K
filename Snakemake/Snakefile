@@ -1,6 +1,6 @@
 """
 Author: Mohammad El-Ismail
-Affiliation: Student at Freie Universität Berlin
+Affiliation: Student at Free University Berlin
 Aim: Workflow for single cell RNA-Seq
 Date: Mon 08.April.2019
 Run: snakemake -s Snakefile
