@@ -1,19 +1,9 @@
-"""
-Author: Mohammad El-Ismail
-Affiliation: Student at Free University Berlin
-Aim: Workflow for single cell RNA-Seq
-Date: Mon 08.April.2019
-Run: snakemake -s Snakefile
-Latest modification: 21.01.2021
-"""
-
 configfile: "config.yaml"
 
 
 rule all:
     input:
-        "/fast/users/elismaim_c/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq"
-
+        'fast/users/${USER}/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq'
 
 rule bbsplit_mouse:
     input:
