@@ -50,7 +50,7 @@ for smp in SAMPLES:
   message("Sample " + smp + " will be processed")
 
 rule all:
-  input: expand("samples/fastqc/{smp}/{smp}_1.fastq_fastqc.zip", smp=SAMPLES),
+  input: expand('samples/fastqc/{smp}/{smp}_1.fastq_fastqc.zip', smp=SAMPLES),
          expand("samples/fastqc/{smp}/{smp}_2.fastq_fastqc.zip",smp=SAMPLES),
          expand("samples/trimmed/{smp}_1_t.fastq.gz", smp=SAMPLES),
          expand("samples/trimmed/{smp}_2_t.fastq.gz", smp=SAMPLES),

@@ -1,0 +1,28 @@
+
+configfile: "config.yaml"
+
+
+rule all:
+    input:
+        "/fast/users/elismaim_c/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq"
+
+
+rule bbsplit_mouse:
+    input:
+        lambda wildcards: config["samples"][wildcards.samples]
+    output:
+        R_cleaned='/fast/users/elismaim_c/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq'
+    params:
+        mouse_ref='/fast/users/elismaim_c/work/PIP3K/ref_files/Mouse/GRCm38.primary_assembly.genome.fa',
+        human_ref='/fast/users/elismaim_c/work/PIP3K/ref_files/Human/GRCh38.primary_assembly.genome.fa'
+    shell:
+        """
+        bbsplit.sh in={input} ref={params.mouse_ref},{params.human_ref} \
+        minratio=0.56 minhits=1 maxindel=16000 \
+        basename={wildcards.samples}_out_%.sam out={output.R_cleaned} ambig2=all \
+        """
+
+
+
+
+
