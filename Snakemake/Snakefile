@@ -3,7 +3,7 @@ configfile: "/fast/users/${USER}/PI3K/Snakemake/config.yaml"
 
 rule all:
     input:
-        expand('fast/users/${USER}/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq', sample =config["sample"])
+        expand('/fast/users/${USER}/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq', samples =config["samples"])
 
 rule bbsplit_mouse:
     input:
