@@ -1,9 +1,9 @@
-configfile: "config.yaml"
+configfile: "/fast/users/${USER}/PI3K/Snakemake/config.yaml"
 
 
 rule all:
     input:
-        'fast/users/${USER}/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq'
+        expand('fast/users/${USER}/scratch/tmp/R1820/bbsplit/R1820/mouse/{samples}_cleaned.fastq', sample =config["sample"])
 
 rule bbsplit_mouse:
     input:
