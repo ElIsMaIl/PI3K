@@ -1,7 +1,7 @@
 samples:
-  #1820_R1: fast/users/${USER}/work/PIP3K/samples/raw_data/R1820/{IDS}*_R1_001.fastq
-  #1820_R2: fast/users/${USER}/work/PIP3K/samples/raw_data/R1820/{IDS}*_R2_001.fastq
-  #1822_R1: fast/users/${USER}/work/PIP3K/samples/raw_data/R1822/{IDS2}*_R1_001.fastq
-  #1822_R2: fast/users/${USER}/work/PIP3K/samples/raw_data/R1822/{IDS2}*_R2_001.fastq
-  1820_trimmed: ${DATDIR}/{IDS}*_R2.fastq_trimmed.fastq
-  1822_trimmed: ${DATDIR2}/{IDS2}*_R2.fastq_trimmed.fastq
+  #1820_R1: fast/users/${USER}/work/PIP3K/samples/raw_data/R1820/{id}*_R1_001.fastq
+  #1820_R2: fast/users/${USER}/work/PIP3K/samples/raw_data/R1820/{id}*_R2_001.fastq
+  #1822_R1: fast/users/${USER}/work/PIP3K/samples/raw_data/R1822/{id2}*_R1_001.fastq
+  #1822_R2: fast/users/${USER}/work/PIP3K/samples/raw_data/R1822/{id2}*_R2_001.fastq
+  1820_trimmed: ${DATDIR}/{id}*_R2.fastq_trimmed.fastq
+  1822_trimmed: ${DATDIR2}/{id2}*_R2.fastq_trimmed.fastq
