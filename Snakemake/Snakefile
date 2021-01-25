@@ -1,4 +1,4 @@
-configfile: "/fast/users/${USER}/PI3K/Snakemake/config.yaml"
+configfile: "/fast/users/elismaim_c/PI3K/Snakemake/config.yaml"
 
 
 rule all:
