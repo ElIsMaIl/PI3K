@@ -3,16 +3,16 @@ configfile: "/fast/users/${USER}/PI3K/Snakemake/config.yaml"
 
 rule all:
     input:
-        expand("${TMPDIR}/{samples}_cleaned.fastq", samples =config["samples"])
+        expand("$TMPDIR/{samples}_cleaned.fastq", samples =config["samples"])
 
 rule bbsplit_mouse:
     input:
         lambda wildcards: config["samples"][wildcards.samples]
     output:
-        R_cleaned="${TMPDIR}/{samples}_cleaned.fastq"
+        R_cleaned="$TMPDIR/{samples}_cleaned.fastq"
     params:
-        mouse_ref="${REFDIRM}/GRCm38.primary_assembly.genome.fa",
-        human_ref="${REFDIRH}/GRCh38.primary_assembly.genome.fa"
+        mouse_ref="$REFDIRM/GRCm38.primary_assembly.genome.fa",
+        human_ref="$REFDIRH/GRCh38.primary_assembly.genome.fa"
     shell:
         """
         bbsplit.sh in={input} ref={params.mouse_ref},{params.human_ref} \
