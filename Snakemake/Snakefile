@@ -1,6 +1,8 @@
-configfile: "/fast/users/elismaim_c/PI3K/Snakemake/config.yaml"
 IDS = "1820_S1_L00".split()
-IDS2= "1822_S2_L00".split()
+IDS2 = "1822_S2_L00".split()
+
+
+configfile: "/fast/users/elismaim_c/PI3K/Snakemake/config.yaml"
 
 rule all:
     input:
