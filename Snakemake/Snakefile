@@ -7,7 +7,7 @@ rule all:
     input:
         expand("$TMPDIR/{sample}_{num}_cleaned.fastq", sample=config["samples"], num=['1','2','3','4','5','6','7','8'])
 
-rule bbsplit_mouse:
+rule bbsplit:
     input:
         sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_{wildcards.num}.fastq"
     output:
