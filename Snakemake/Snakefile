@@ -9,7 +9,7 @@ rule all:
 
 rule bbsplit_mouse:
     input:
-        sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_{wildcards.num}_R2_001.fastq_trimmed.fastq"
+        sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_L00{wildcards.num}_R2_001.fastq_trimmed.fastq"
     output:
         R_cleaned="$TMPDIR/{sample}_cleaned.fastq"
     params:
