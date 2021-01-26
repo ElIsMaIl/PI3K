@@ -1,18 +1,17 @@
-IDS = "1820_S1_L00".split()
-IDS2 = "1822_S2_L00".split()
-
 
 configfile: "/fast/users/elismaim_c/PI3K/Snakemake/config.yaml"
+print (config['samples'])
+
 
 rule all:
     input:
-        expand("$TMPDIR/{samples}_cleaned.fastq", samples=config["samples"], id=IDS, id2=IDS2)
+        expand("$TMPDIR/{sample}_cleaned.fastq", sample=config["samples"])
 
 rule bbsplit_mouse:
     input:
-        fastq = lambda wildcards: config["samples"][wildcards.samples]
+        sample = lambda wildcards: f"{config['samples'][wildcards.sample]}.fastq"
     output:
-        R_cleaned="$TMPDIR/{samples}_cleaned.fastq"
+        R_cleaned="$TMPDIR/{sample}_cleaned.fastq"
     params:
         mouse_ref="$REFDIRM/GRCm38.primary_assembly.genome.fa",
         human_ref="$REFDIRH/GRCh38.primary_assembly.genome.fa"
@@ -20,7 +19,7 @@ rule bbsplit_mouse:
         """
         bbsplit.sh in={input} ref={params.mouse_ref},{params.human_ref} \
         minratio=0.56 minhits=1 maxindel=16000 \
-        basename={wildcards.samples}_out_%.sam out={output.R_cleaned} ambig2=all \
+        basename={wildcards.sample}_out_%.sam out={output.R_cleaned} ambig2=all \
         """
 
 

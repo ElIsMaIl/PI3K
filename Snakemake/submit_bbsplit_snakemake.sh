@@ -6,8 +6,8 @@
 #SBATCH --nodes=1
 #SBATCH --mem=64G
 
-export DATDIR=/fast/users/${USER}/scratch/tmp/R1820/trimmed_reads/
-export DATDIR2=/fast/users/${USER}/scratch/tmp/R1822/trimmed_reads/
+#export DATDIR=/fast/users/${USER}/scratch/tmp/R1820/trimmed_reads/
+#export DATDIR2=/fast/users/${USER}/scratch/tmp/R1822/trimmed_reads/
 export REFDIRM=/fast/users/${USER}/work/PIP3K/ref_files/Mouse/
 export REFDIRH=/fast/users/${USER}/work/PIP3K/ref_files/Human/
 export TMPDIR=/fast/users/${USER}/scratch/tmp/bbsplit/
