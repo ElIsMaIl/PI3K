@@ -9,6 +9,8 @@ rule all:
 
 rule bbsplit:
     input:
+        print(wildcards)
+        print(wildcards.sample)
         sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_{wildcards.num}.fastq"
     output:
         R_cleaned="$TMPDIR/{sample}_cleaned.fastq"
