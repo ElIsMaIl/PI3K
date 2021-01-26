@@ -4,7 +4,7 @@ SBATCH --job-name=bbsplit_snakemake
 SBATCH --output=logs/%x-%j.log
 SBATCH --ntasks=8
 SBATCH --nodes=1
-SBATCH --mem=32G
+SBATCH --mem=64G
 
 
 export REFDIRM=/fast/users/${USER}/work/PIP3K/ref_files/Mouse
@@ -23,7 +23,7 @@ set -x
 snakemake \
     --drmaa " \
     --nodes=1 \
-    --mem=32000 \
+    --mem=64000 \
     -n 8 \
     -o $LOGDIR/%x-%j.log" \
     -j 2 \
