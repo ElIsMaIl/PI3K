@@ -1,5 +1,4 @@
-
-configfile: "/fast/users/elismaim_c/scratch/tmp/PI3K/Snakemake/config.yaml"
+configfile: "config.yaml"
 print (config['samples'])
 
 

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-SBATCH --job-name=bbsplit_snakemake
-SBATCH --output=/fast/users/${USER}/PI3K/Snakemake/logs/%x-%j.log
-SBATCH --ntasks=8
-SBATCH --nodes=1
-SBATCH --mem=64G
+#SBATCH --job-name=bbsplit_snakemake
+#SBATCH --output=/fast/users/${USER}/PI3K/Snakemake/logs/%x-%j.log
+#SBATCH --ntasks=8
+#SBATCH --nodes=1
+#SBATCH --mem=64G
 
 
 #export REFDIRM=/fast/users/${USER}/work/PIP3K/ref_files/Mouse
