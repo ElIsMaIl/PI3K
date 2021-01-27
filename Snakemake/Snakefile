@@ -14,13 +14,10 @@ rule bbsplit:
     output:
         R_cleaned="$TMPDIR/{sample}_{num}_cleaned.fastq",
         sam = "$TMPDIR/{sample}_{num}_out_%.sam"
-    params:
-        mouse_ref="$REFDIRM/GRCm38.primary_assembly.genome.fa",
-        human_ref="$REFDIRH/GRCh38.primary_assembly.genome.fa"
     shell:
         """     
         cd $TMPDIR
-        bbsplit.sh in={input} ref={params.mouse_ref},{params.human_ref} \
+        bbsplit.sh in={input} \
         minratio=0.56 minhits=1 maxindel=16000 \
         basename={wildcards.sample}_out_%.sam out={output.R_cleaned} ambig2=all \
         """
