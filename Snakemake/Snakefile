@@ -18,7 +18,7 @@ rule bbsplit:
         cd $TMPDIR
         bbsplit.sh in={input} \
         minratio=0.56 minhits=1 maxindel=16000 \
-        basename={wildcards.sample}_out_%.sam out={output.R_cleaned} ambig2=all \
+        basename={output.sam} out={output.R_cleaned} ambig2=all \
         """
 
 
