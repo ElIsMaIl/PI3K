@@ -11,8 +11,8 @@ rule bbsplit:
     input:
         sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_{wildcards.num}.fastq"
     output:
-        R_cleaned="$TMPDIR/{sample}_{num}_cleaned.fastq",
-        sam = "$TMPDIR/{sample}_{num}_out_%.sam"
+        R_cleaned=expand("$TMPDIR/{sample}_{num}_cleaned.fastq", sample=config["samples"], num=['1','2','3','4','5','6','7','8']),
+        sam=expand("$TMPDIR/{sample}_{num}_out_%.sam", sample=config["samples"], num=['1','2','3','4','5','6','7','8'])
     shell:
         """     
         cd $TMPDIR
