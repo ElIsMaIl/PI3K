@@ -19,5 +19,5 @@ snakemake \
     --mem=64000 \
     -n 8 \
     -o $LOGDIR/%x-%j.log" \
-    -j 4 \
+    -j 2 \
     -p

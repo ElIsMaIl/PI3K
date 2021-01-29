@@ -9,7 +9,7 @@ rule all:
 
 rule bbsplit:
     input:
-        sample = lambda wildcards: f"{config['samples'][wildcards.samples]}_{wildcards.num}.fastq"
+        sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_{wildcards.num}.fastq"
     output:
         R_cleaned=expand("$TMPDIR/{sample}_{num}_cleaned.fastq"),
         sam=expand("$TMPDIR/{sample}_{num}_out_%.sam")
