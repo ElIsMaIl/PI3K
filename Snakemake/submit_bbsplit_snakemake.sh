@@ -19,5 +19,7 @@ snakemake \
     --mem=64000 \
     -n 8 \
     -o $LOGDIR/%x-%j.log" \
-    -j 2 \
-    -p
+    -j 16 \
+    -p \
+    --latency-wait 60 \
+    --use-conda
