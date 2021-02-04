@@ -2,7 +2,7 @@
 
 #export REFDIRM=/fast/users/${USER}/work/PIP3K/ref_files/Mouse
 #export REFDIRH=/fast/users/${USER}/work/PIP3K/ref_files/Human
-export TMPDIR=/fast/users/${USER}/scratch/tmp/bbsplit
+export TMPDIR=/fast/users/${USER}/scratch/tmp
 export LOGDIR=/fast/users/${USER}/scratch/tmp/bbsplit/logs/${SLURM_JOB_NAME}-${SLURM_JOB_ID}
 mkdir -p $LOGDIR
 mkdir -p $TMPDIR
