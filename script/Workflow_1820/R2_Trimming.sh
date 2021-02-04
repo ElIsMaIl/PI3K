@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Quality Controll raw_data
+# Quality Controll raw_data
 # echo "Running fastqc..."
 # cd  ~/work/PIP3K/samples/raw_data/R1820/
 #
@@ -39,29 +39,29 @@
 # mv *.html ~/scratch/tmp/R1820/results_R2_trimmed_reads_fastqc/
 
 
-echo "bbsplit..."
-mkdir -p ~/scratch/tmp/R1820/bbsplit/mouse/alignment_trimmed/
-cd ~/scratch/tmp/R1820/bbsplit/mouse/alignment_trimmed/
+#echo "bbsplit..."
+#mkdir -p ~/scratch/tmp/R1820/bbsplit/mouse/alignment_trimmed/
+#cd ~/scratch/tmp/R1820/bbsplit/mouse/alignment_trimmed/
 
- for ((i=1; i<=8; i++));
- do
- R2=$(ls ~/scratch/tmp/R1820/trimmed_reads/1820_S1_L00${i}_R2_001.fastq_trimmed.fastq)
+# for ((i=1; i<=8; i++));
+# do
+# R2=$(ls ~/scratch/tmp/R1820/trimmed_reads/1820_S1_L00${i}_R2_001.fastq_trimmed.fastq)
 
- bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Mouse/GRCm38.primary_assembly.genome.fa basename=${R2}_m_out_%.sam out_1820=${R2}_m_clean.fq ambiguous2=all refstats=statisticsM_%.txt
+# bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Mouse/GRCm38.primary_assembly.genome.fa basename=${R2}_m_out_%.sam out_1820=${R2}_m_clean.fq ambiguous2=all refstats=statisticsM_%.txt
 
- done
+# done
 
- echo "bbsplit..."
- mkdir -p ~/scratch/tmp/R1820/bbsplit/human/alignment_trimmed/
- cd ~/scratch/tmp/R1820/bbsplit/human/alignment_trimmed/
+# echo "bbsplit..."
+# mkdir -p ~/scratch/tmp/R1820/bbsplit/human/alignment_trimmed/
+# cd ~/scratch/tmp/R1820/bbsplit/human/alignment_trimmed/
 
-  for ((i=1; i<=8; i++));
-  do
-  R2=$(ls ~/scratch/tmp/R1820/trimmed_reads/1820_S1_L00${i}_R2_001.fastq_trimmed.fastq)
+#  for ((i=1; i<=8; i++));
+#  do
+#  R2=$(ls ~/scratch/tmp/R1820/trimmed_reads/1820_S1_L00${i}_R2_001.fastq_trimmed.fastq)
 
-  bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Human/GRCh38.primary_assembly.genome.fa basename=${R2}_h_out_%.sam out_1820=${R2}_h_clean.fq ambiguous2=all refstats=statisticsH_%.txt
+#  bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Human/GRCh38.primary_assembly.genome.fa basename=${R2}_h_out_%.sam out_1820=${R2}_h_clean.fq ambiguous2=all refstats=statisticsH_%.txt
 
-  done
+#  done
 
 
 #echo "STAR genome index"
