@@ -1,19 +1,26 @@
 configfile: "config.yaml"
 print (config['samples'])
-
+reads = ['R1','R2']
+nums = ['1','2','3','4','5','6','7','8']
+fastq_file_extension = _001.fastq
 
 rule all:
     input:
-        expand("$TMPDIR/{sample}_{num}_cleaned.fastq", sample=config["samples"], num=['1','2','3','4','5','6','7','8']),
-        expand("$TMPDIR/{sample}_{num}_out_%.sam", sample=config["samples"], num=['1','2','3','4','5','6','7','8'])
+        expand(["$TMPDIR/fastqc/{sample}"),
+        #expand("$TMPDIR/{sample}_{num}_cleaned.fastq", sample=config["samples"], num=nums),
+        #expand("$TMPDIR/{sample}_{num}_out_%.sam", sample=config["samples"], num=nums)
 
-rule bbsplit:
+rule fastqc:
+    input:
+        sample =
+
+#rule bbsplit:
     input:
         sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_{wildcards.num}.fastq"
-    output:
+#    output:
         R_cleaned=expand("$TMPDIR/{{sample}}_{{num}}_cleaned.fastq"),
         sam=expand("$TMPDIR/{{sample}}_{{num}}_out_%.sam")
-    shell:
+#    shell:
         """     
         cd $TMPDIR
         bbsplit.sh in={input} \
