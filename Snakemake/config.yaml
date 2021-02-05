@@ -1,5 +1,5 @@
 samples:
-  1820: fast/users/elismaim_c/work/PIP3K/samples/raw_data/R1820/
-  1822: fast/users/elismaim_c/work/PIP3K/samples/raw_data/R1822/
-  #1820_trimmed: /fast/users/elismaim_c/scratch/tmp/R1820/trimmed_reads/1820_S1_R2_trimmed
-  #1822_trimmed: /fast/users/elismaim_c/scratch/tmp/R1822/trimmed_reads/1822_S2_R2_trimmed
+  #1820: fast/users/elismaim_c/work/PIP3K/samples/raw_data/R1820/
+  #1822: fast/users/elismaim_c/work/PIP3K/samples/raw_data/R1822/
+  1820_trimmed: /fast/users/elismaim_c/scratch/tmp/R1820/trimmed_reads/1820_S1_R2_trimmed
+  1822_trimmed: /fast/users/elismaim_c/scratch/tmp/R1822/trimmed_reads/1822_S2_R2_trimmed

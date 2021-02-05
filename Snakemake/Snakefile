@@ -1,26 +1,53 @@
+"""
+Author: Mohammad El-Ismail
+Affiliation: Comprehensive cancer center Charité
+Aim: A single cell RNA-Seq snakemake workflow to analyze the PI3K-mTor pathway
+Date: Thu 04 15:50:10 CET 2021
+Run: snakemake   -s Snakefile
+Latest modification:
+  - todo:
+    - why does bbsplit get cancelled?
+    - adding fastqc and trimmomatic rules
+"""
+
+##-----------------------------------------------##
+## Working directory                             ##
+##-----------------------------------------------##
+#BASE_DIR = "/fast/users/${USER}/elismaim_c/work"
+#WDIR = BASE_DIR + "/PIP3K"
+#workdir: WDIR
+#message("The current working directory is " + WDIR)
+
+##--------------------------------------------------------------------------------------##
+## Variables declaration
+## Declaring some variables used
+## (GTF file, INDEX, chromosome length)
+##--------------------------------------------------------------------------------------##
+#GTF_mouse = BASE_DIR + "/ref_files/Mouse/gencodevM19-20181206.gtf"
+#GFT_human = BASE_DIR + "/ref_files/Human/gencodev29-20181205.gtf"
+#FASTA_mouse = BASE_DIR + "/ref_files/Mouse/GRCm38.primary_assembly.genome.fa"
+#FASTA_human = BASE_DIR + "/ref_files/Human/GRCh38.primary_assembly.genome.fa"
+
+
 configfile: "config.yaml"
-print (config['samples'])
-reads = ['R1','R2']
+
+#reads = ['R1','R2']
 nums = ['1','2','3','4','5','6','7','8']
-fastq_file_extension = _001.fastq
+#fastq_file_extension = _001.fastq
 
 rule all:
     input:
-        expand(["$TMPDIR/fastqc/{sample}"),
-        #expand("$TMPDIR/{sample}_{num}_cleaned.fastq", sample=config["samples"], num=nums),
-        #expand("$TMPDIR/{sample}_{num}_out_%.sam", sample=config["samples"], num=nums)
+        #expand(["$TMPDIR/fastqc/{sample}"),
+        expand("$TMPDIR/{sample}_{num}_cleaned.fastq", sample=config["samples"], num=nums),
+        expand("$TMPDIR/{sample}_{num}_out_%.sam", sample=config["samples"], num=nums)
 
-rule fastqc:
-    input:
-        sample =
-
-#rule bbsplit:
+rule bbsplit:
     input:
         sample = lambda wildcards: f"{config['samples'][wildcards.sample]}_{wildcards.num}.fastq"
-#    output:
+    output:
         R_cleaned=expand("$TMPDIR/{{sample}}_{{num}}_cleaned.fastq"),
         sam=expand("$TMPDIR/{{sample}}_{{num}}_out_%.sam")
-#    shell:
+    shell:
         """     
         cd $TMPDIR
         bbsplit.sh in={input} \
