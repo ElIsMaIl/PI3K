@@ -1,42 +1,42 @@
 #!/bin/bash
 
 # Quality Controll raw_data
-# echo "Running fastqc..."
-# cd  ~/work/PIP3K/samples/raw_data/R1820/
-#
-# fastqc *.fastq
-#
-# echo "mdkir for results_fastqc..."
-# mkdir -p ~/scratch/tmp/R1820/results_fastqc/
-#
-# echo "saving..."
-# mv *.zip   ~/scratch/tmp/R1820/results_fastqc/
-# mv *.html  ~/scratch/tmp/R1820/results_fastqc/
-# cd ~/work/PIP3K/samples/raw_data/R1820/
-#
+ echo "Running fastqc..."
+ cd  ~/work/PIP3K/samples/raw_data/R1820/
+
+ fastqc *.fastq
+
+ echo "mdkir for results_fastqc..."
+ mkdir -p ~/scratch/tmp/R1820/results_fastqc/
+
+ echo "saving..."
+ mv *.zip   ~/scratch/tmp/R1820/results_fastqc/
+ mv *.html  ~/scratch/tmp/R1820/results_fastqc/
+ cd ~/work/PIP3K/samples/raw_data/R1820/
+
 # #Trimming 1820_R2
-# echo "starting the next step..."
-# echo "Trimming..."
-# mkdir -p ~/scratch/tmp/R1820/trimmed_reads/
-# cd ~/scratch/tmp/R1820/trimmed_reads/
-#
-# for ((i=1; i<=8; i++));
-# do
-# R2=$(ls ~/work/PIP3K/samples/raw_data/R1820/1820_S1_L00${i}_R2_001.fastq)
-#
-# trimmomatic SE -phred33 -threads 8 ${R2} ${R2}_trimmed.fastq ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
-# done
-#
-# echo "saving..."
-# mv *.fastq_trimmed.fastq ~/scratch/tmp/R1820/trimmed_reads/
-#  cd ~/scratch/tmp/R1820/trimmed_reads/
-#
+ echo "starting the next step..."
+ echo "Trimming..."
+ mkdir -p ~/scratch/tmp/R1820/trimmed_reads/
+ cd ~/scratch/tmp/R1820/trimmed_reads/
+
+ for ((i=1; i<=8; i++));
+ do
+ R2=$(ls ~/work/PIP3K/samples/raw_data/R1820/1820_S1_L00${i}_R2_001.fastq)
+
+ trimmomatic SE -phred33 -threads 8 ${R2} ${R2}_trimmed.fastq ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
+ done
+
+ echo "saving..."
+ mv *.fastq_trimmed.fastq ~/scratch/tmp/R1820/trimmed_reads/
+ cd ~/scratch/tmp/R1820/trimmed_reads/
+
 # #Quality Controll trimmed_reads
-# echo "fastqc for trimmed_reads & saving..."
-# fastqc *.fastq
-# mkdir -p ~/scratch/tmp/R1820/results_R2_trimmed_reads_fastqc/
-# mv *.zip ~/scratch/tmp/R1820/results_R2_trimmed_reads_fastqc/
-# mv *.html ~/scratch/tmp/R1820/results_R2_trimmed_reads_fastqc/
+ echo "fastqc for trimmed_reads & saving..."
+ fastqc *.fastq
+ mkdir -p ~/scratch/tmp/R1820/results_R2_trimmed_reads_fastqc/
+ mv *.zip ~/scratch/tmp/R1820/results_R2_trimmed_reads_fastqc/
+ mv *.html ~/scratch/tmp/R1820/results_R2_trimmed_reads_fastqc/
 
 
 #echo "bbsplit..."

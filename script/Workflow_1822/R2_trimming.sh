@@ -2,37 +2,37 @@
 
 
 #Quality Controll raw_data
-# echo "Running fastqc..."
-# cd  ~/work/PIP3K/samples/raw_data/R1822/
-#
-# fastqc *.fastq
-#
-# echo "mdkir for results_fastqc..."
-# mkdir -p ~/scratch/tmp/R1822/results_fastqc/
-#
-# echo "saving..."
-# mv *.zip   ~/scratch/tmp/R1822/results_fastqc/
-# mv *.html  ~/scratch/tmp/R1822/results_fastqc/
-# cd ~/work/PIP3K/samples/raw_data/R1822/
-#
-#
-# #Trimming 1822_R2
-# echo "starting the next step..."
-# echo "Trimming..."
-#
-# mkdir -p ~/scratch/tmp/R1822/trimmed_reads/
-# cd ~/scratch/tmp/R1822/trimmed_reads/
-#
-# for ((i=1; i<=8; i++));
-# do
-# R2=$(ls ~/work/PIP3K/samples/raw_data/R1822/1822_S2_L00${i}_R2_001.fastq)
-#
-# trimmomatic SE -phred33 -threads 8 ${R2} ${R2}_trimmed.fastq ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
-# done
-#
-# echo "saving..."
-# mv *.fastq_trimmed.fastq ~/scratch/tmp/R1822/trimmed_reads/
- cd ~/scratch/tmp/R1822/trimmed_reads/
+echo "Running fastqc..."
+cd  ~/work/PIP3K/samples/raw_data/R1822/
+
+fastqc *.fastq
+
+echo "mdkir for results_fastqc..."
+mkdir -p ~/scratch/tmp/R1822/results_fastqc/
+
+echo "saving..."
+mv *.zip   ~/scratch/tmp/R1822/results_fastqc/
+mv *.html  ~/scratch/tmp/R1822/results_fastqc/
+cd ~/work/PIP3K/samples/raw_data/R1822/
+
+
+#Trimming 1822_R2
+echo "starting the next step..."
+echo "Trimming..."
+
+mkdir -p ~/scratch/tmp/R1822/trimmed_reads/
+cd ~/scratch/tmp/R1822/trimmed_reads/
+
+for ((i=1; i<=8; i++));
+do
+R2=$(ls ~/work/PIP3K/samples/raw_data/R1822/1822_S2_L00${i}_R2_001.fastq)
+
+trimmomatic SE -phred33 -threads 8 ${R2} ${R2}_trimmed.fastq ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
+done
+
+echo "saving..."
+mv *.fastq_trimmed.fastq ~/scratch/tmp/R1822/trimmed_reads/
+cd ~/scratch/tmp/R1822/trimmed_reads/
 
 
 
@@ -43,30 +43,30 @@ mkdir -p ~/scratch/tmp/R1822/results_R2_trimmed_reads_fastqc/
 mv *.zip ~/scratch/tmp/R1822/results_R2_trimmed_reads_fastqc/
 mv *.html ~/scratch/tmp/R1822/results_R2_trimmed_reads_fastqc/
 
-echo "bbsplit..."
-mkdir -p ~/scratch/tmp/R1822/bbsplit/mouse/alignment_trimmed/
-cd ~/scratch/tmp/R1822/bbsplit/mouse/alignment_trimmed/
+#echo "bbsplit..."
+#mkdir -p ~/scratch/tmp/R1822/bbsplit/mouse/alignment_trimmed/
+#cd ~/scratch/tmp/R1822/bbsplit/mouse/alignment_trimmed/
 
-for ((i=1; i<=8; i++));
-do
-R2=$(ls ~/scratch/tmp/R1822/trimmed_reads/1822_S2_L00${i}_R2_001.fastq_trimmed.fastq)
+#for ((i=1; i<=8; i++));
+#do
+#R2=$(ls ~/scratch/tmp/R1822/trimmed_reads/1822_S2_L00${i}_R2_001.fastq_trimmed.fastq)
 
-bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Mouse/GRCm38.primary_assembly.genome.fa basename=${R2}_m_out_%.sam out_1822=${R2}_m_clean.fq ambiguous2=all refstats=statisticsM_%.txt
+#bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Mouse/GRCm38.primary_assembly.genome.fa basename=${R2}_m_out_%.sam out_1822=${R2}_m_clean.fq ambiguous2=all refstats=statisticsM_%.txt
 
-done
+#done
 
 
-echo "bbsplit..."
-mkdir -p ~/scratch/tmp/R1822/bbsplit/human/alignment_trimmed/
-cd ~/scratch/tmp/R1822/bbsplit/human/alignment_trimmed/
+#echo "bbsplit..."
+#mkdir -p ~/scratch/tmp/R1822/bbsplit/human/alignment_trimmed/
+#cd ~/scratch/tmp/R1822/bbsplit/human/alignment_trimmed/
 
-for ((i=1; i<=8; i++));
-do
-R2=$(ls ~/scratch/tmp/R1822/trimmed_reads/1822_S2_L00${i}_R2_001.fastq_trimmed.fastq)
+#for ((i=1; i<=8; i++));
+#do
+#R2=$(ls ~/scratch/tmp/R1822/trimmed_reads/1822_S2_L00${i}_R2_001.fastq_trimmed.fastq)
 
-bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Human/GRCh38.primary_assembly.genome.fa basename=${R2}_h_out_%.sam out_1822=${R2}_h_clean.fq ambiguous2=all refstats=statisticsH_%.txt
+#bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 in=${R2} ref=/fast/users/elismaim_c/work/PIP3K/ref_files/Human/GRCh38.primary_assembly.genome.fa basename=${R2}_h_out_%.sam out_1822=${R2}_h_clean.fq ambiguous2=all refstats=statisticsH_%.txt
 
-done
+#done
 
 
 # echo "STAR genome index"
