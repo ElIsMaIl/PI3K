@@ -31,20 +31,21 @@ FASTA_human = BASE_DIR + "/ref_files/Human/GRCh38.primary_assembly.genome.fa"
 SAMPLES, = glob_wildcards("samples/raw_data/{smp}_R1.fastq")
 NB_SAMPLES = len(SAMPLES)
 
+
 for smp in SAMPLES:
   message("Sample " + smp + " will be processed")
 
 
 rule all:
     input:
-        expand(["samples/fastqc/{sample}_R1_fastqc.zip", smp=SAMPLES)
+        expand("samples/fastqc/{sample}_R1_fastqc.zip", smp=SAMPLES)
 
 rule fastqc:
         input: fwd="samples/raw_data/{smp}_R1.fastq",
                rev="samples/raw_data/{smp}_R2.fastq"
         output:fwd="samples/fastqc/{smp}_R1_fastqc.zip",
                rev="samples/fastqc/{smp}_R2_fastqc.zip"
-        message: """---Quality control of raw data with fastqc"""
+        message:"""---Quality control of raw data with fastqc"""
         shell: """
                 fastqc --outdir samples/fastqc/{wildcards.smp} --extract -f fastq {input.fwd} {input.rev}
                 
