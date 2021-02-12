@@ -1,0 +1,58 @@
+"""
+Author: Mohammad El-Ismail
+Affiliation: Comprehensive cancer center Charité
+Aim: A single cell RNA-Seq snakemake workflow to analyze the PI3K-mTor pathway
+Date: Thu 04.02 15:50:10 CET 2021
+Run: sbatch submit_snakemake.sh
+Latest modification: Fr 12.02 16:53:15 CET 2021
+"""
+
+##-----------------------------------------------##
+## Working directory                             ##
+##-----------------------------------------------##
+BASE_DIR = "/fast/projects/scrnaseq_pdx/work/PI3K"
+WDIR = BASE_DIR + "/output"
+workdir: WDIR
+message("The current working directory is " + WDIR)
+
+##--------------------------------------------------------------------------------------##
+## Variables declaration
+## Declaring some variables used
+## (GTF file, INDEX, chromosome length)
+##--------------------------------------------------------------------------------------##
+GTF_mouse = BASE_DIR + "/ref_files/Mouse/gencodevM19-20181206.gtf"
+GFT_human = BASE_DIR + "/ref_files/Human/gencodev29-20181205.gtf"
+FASTA_mouse = BASE_DIR + "/ref_files/Mouse/GRCm38.primary_assembly.genome.fa"
+FASTA_human = BASE_DIR + "/ref_files/Human/GRCh38.primary_assembly.genome.fa"
+
+##--------------------------------------------------------------------------------------##
+## The list of samples to be processed
+##--------------------------------------------------------------------------------------##
+SAMPLES, = glob_wildcards("samples/raw_data/{smp}_R1.fastq")
+NB_SAMPLES = len(SAMPLES)
+
+for smp in SAMPLES:
+  message("Sample " + smp + " will be processed")
+
+
+rule all:
+    input:
+        expand(["samples/fastqc/{sample}_R1_fastqc.zip", smp=SAMPLES)
+
+rule fastqc:
+        input: fwd="samples/raw_data/{smp}_R1.fastq",
+               rev="samples/raw_data/{smp}_R2.fastq"
+        output:fwd="samples/fastqc/{smp}_R1_fastqc.zip",
+               rev="samples/fastqc/{smp}_R2_fastqc.zip"
+        message: """---Quality control of raw data with fastqc"""
+        shell: """
+                fastqc --outdir samples/fastqc/{wildcards.smp} --extract -f fastq {input.fwd} {input.rev}
+                
+               """
+
+
+
+
+
+
+
