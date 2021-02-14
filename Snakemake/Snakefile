@@ -13,7 +13,7 @@ Latest modification: Fr 12.02 16:53:15 CET 2021
 BASE_DIR = "/fast/projects/scrnaseq_pdx/work/PI3K"
 WDIR = BASE_DIR + "/output"
 workdir: WDIR
-message("The current working directory is " + WDIR)
+
 
 ##--------------------------------------------------------------------------------------##
 ## Variables declaration
@@ -38,7 +38,7 @@ for smp in SAMPLES:
 
 rule all:
     input:
-        expand("samples/fastqc/{sample}_R2_t.fastq", smp=SAMPLES)
+        expand("samples/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES)
 
 rule fastqc:
         input: fwd="samples/raw_data/{smp}_R1.fastq",
@@ -46,18 +46,24 @@ rule fastqc:
         output:fwd="samples/fastqc/{smp}_R1_fastqc.zip",
                rev="samples/fastqc/{smp}_R2_fastqc.zip"
         shell: """
-                echo "Quality control by fastqc of the raw data"
-                fastqc --outdir samples/fastqc/{wildcards.smp} --extract -f fastq {input.fwd} {input.rev}
-                
+               echo "Quality control by fastqc of the raw data." 
+               fastqc --outdir samples/fastqc/{wildcards.smp} --extract -f fastq {input.fwd} {input.rev}
                """
 rule trimming:
-        input: rev ="samples/raw_data/{smp}_R2.fastq"
-        output:rev ="samples/trimmed/{smp}_R2_t.fastq"
+        input: rev="samples/raw_data/{smp}_R2.fastq"
+        output:rev="samples/trimmed/{smp}_R2_t.fastq"
         threads: 8
         shell: """
-               echo "Trimming the R2 reads of the raw data with Trimmomatic"
+               echo "Trimming by Trimmomatic of the raw R2 reads."
                trimmomatic SE -phred33 -threads {threads} {input.rev} {output.rev} ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
                """
+rule fastqc_after:
+        input: rev="samples/trimmed/{smp}_R2_t.fastq"
+        output:rev="samples/fastqc_after/{smp}_R2_t_fastqc.zip"
+        shell:"""
+              echo "Quality control by fastqc of the trimmed R2 reads."
+              fastqc --outdir samples/fastqc_after/{wildcards.smp} --extract -f fastq {input.rev}
+              """
 
 
 
