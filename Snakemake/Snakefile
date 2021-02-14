@@ -39,6 +39,10 @@ for smp in SAMPLES:
 
 rule all:
     input:
+        expand("samples/fastqc/{smp}_R1_fastqc.zip", smp=SAMPLES),
+        expand("samples/fastqc/{smp}_R2_fastqc.zip", smp=SAMPLES),
+        expand("samples/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
+        expand("samples/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
         expand("samples/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
         expand("samples/bbsplit/{smp}_R2_t_cleaned.fastq", smp=SAMPLES)
 
@@ -51,6 +55,7 @@ rule fastqc:
                echo "Quality control by fastqc of the raw data." 
                fastqc --outdir samples/fastqc/{wildcards.smp} --extract -f fastq {input.fwd} {input.rev}
                """
+
 rule trimming:
         input: rev="samples/raw_data/{smp}_R2.fastq"
         output:rev="samples/trimmed/{smp}_R2_t.fastq"
@@ -59,6 +64,7 @@ rule trimming:
                echo "Trimming by Trimmomatic of the raw R2 reads."
                trimmomatic SE -phred33 -threads {threads} {input.rev} {output.rev} ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
                """
+
 rule fastqc_after:
         input: rev="samples/trimmed/{smp}_R2_t.fastq"
         output:rev="samples/fastqc_after/{smp}_R2_t_fastqc.zip"
