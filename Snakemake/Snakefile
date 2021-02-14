@@ -20,6 +20,7 @@ workdir: WDIR
 ## Declaring some variables used
 ## (GTF file, INDEX, chromosome length)
 ##--------------------------------------------------------------------------------------##
+INDEX = BASE_DIR + "/indexes/bbsplit/"
 GTF_mouse = BASE_DIR + "/ref_files/Mouse/gencodevM19-20181206.gtf"
 GFT_human = BASE_DIR + "/ref_files/Human/gencodev29-20181205.gtf"
 FASTA_mouse = BASE_DIR + "/ref_files/Mouse/GRCm38.primary_assembly.genome.fa"
@@ -38,7 +39,8 @@ for smp in SAMPLES:
 
 rule all:
     input:
-        expand("samples/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES)
+        expand("samples/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
+        expand("samples/bbsplit/{smp}_R2_t_cleaned.fastq, smp=SAMPLES")
 
 rule fastqc:
         input: fwd="samples/raw_data/{smp}_R1.fastq",
@@ -65,6 +67,16 @@ rule fastqc_after:
               fastqc --outdir samples/fastqc_after/{wildcards.smp} --extract -f fastq {input.rev}
               """
 
+rule bbsplit:
+        input: rev="samples/trimmed/{smp}_R2_t.fastq"
+        params: index = INDEX
+        output:basename="samples/bbsplit/{smp}_R2_t_out_%.sam",
+               fastq="samples/bbsplit/{smp}_R2_t_cleaned.fastq"
+        threads: 8
+        shell:"""
+              echo "Mapping the trimmed R2 reads to Human and Mouse reference genome."
+              bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 t={threads} ambiguous=all path={params.index} in={input.rev} basename={output.basename} out={output.fastq}
+              """
 
 
 
