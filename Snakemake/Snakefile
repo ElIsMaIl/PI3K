@@ -40,7 +40,7 @@ for smp in SAMPLES:
 rule all:
     input:
         expand("samples/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
-        expand("samples/bbsplit/{smp}_R2_t_cleaned.fastq, smp=SAMPLES")
+        expand("samples/bbsplit/{smp}_R2_t_cleaned.fastq", smp=SAMPLES)
 
 rule fastqc:
         input: fwd="samples/raw_data/{smp}_R1.fastq",
