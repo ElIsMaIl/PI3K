@@ -13,7 +13,7 @@ set -x
 snakemake \
     --drmaa " \
     --nodes=1 \
-    --mem=65,536 \
+    --mem=64000 \
     -n 8 \
     -o $LOGDIR/%x-%j.log" \
     -j 4 \
