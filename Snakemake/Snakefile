@@ -25,6 +25,7 @@ GTF_mouse = BASE_DIR + "/ref_files/Mouse/gencodevM19-20181206.gtf"
 GFT_human = BASE_DIR + "/ref_files/Human/gencodev29-20181205.gtf"
 FASTA_mouse = BASE_DIR + "/ref_files/Mouse/GRCm38.primary_assembly.genome.fa"
 FASTA_human = BASE_DIR + "/ref_files/Human/GRCh38.primary_assembly.genome.fa"
+ADAPTER_trim = BASE_DIR + "/adapters_trim/TruSeq3-SE.fa"
 
 ##--------------------------------------------------------------------------------------##
 ## The list of samples to be processed
@@ -35,45 +36,46 @@ NB_SAMPLES = len(SAMPLES)
 
 rule all:
     input:
-        expand("samples/fastqc/{smp}_R1_fastqc.zip", smp=SAMPLES),
-        expand("samples/fastqc/{smp}_R2_fastqc.zip", smp=SAMPLES),
-        expand("samples/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
-        expand("samples/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
-        expand("samples/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
-        expand("samples/bbsplit/{smp}_R2_t_cleaned.fastq", smp=SAMPLES)
+        expand("output/fastqc/{smp}_R1_fastqc.zip", smp=SAMPLES),
+        expand("output/fastqc/{smp}_R2_fastqc.zip", smp=SAMPLES),
+        expand("output/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
+        expand("output/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
+        expand("output/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
+        expand("output/bbsplit/{smp}_R2_t_cleaned.fastq", smp=SAMPLES)
 
 rule fastqc:
         input: fwd="samples/raw_data/{smp}_R1.fastq",
                rev="samples/raw_data/{smp}_R2.fastq"
-        output:fwd="samples/fastqc/{smp}_R1_fastqc.zip",
-               rev="samples/fastqc/{smp}_R2_fastqc.zip"
+        output:fwd="output/fastqc/{smp}_R1_fastqc.zip",
+               rev="output/fastqc/{smp}_R2_fastqc.zip"
         shell: """
                echo "Quality control by fastqc of the raw data." 
-               fastqc --outdir samples/fastqc/{wildcards.smp} --extract -f fastq {input.fwd} {input.rev}
+               fastqc --outdir output/fastqc/{wildcards.smp} --extract -f fastq {input.fwd} {input.rev}
                """
 
 rule trimming:
         input: rev="samples/raw_data/{smp}_R2.fastq"
-        output:rev="samples/trimmed/{smp}_R2_t.fastq"
+        params: adapter = ADAPTER_trim 
+        output:rev="output/trimmed/{smp}_R2_t.fastq"
         threads: 8
         shell: """
                echo "Trimming by Trimmomatic of the raw R2 reads."
-               trimmomatic SE -phred33 -threads {threads} {input.rev} {output.rev} ILLUMINACLIP:/fast/users/elismaim_c/work/PIP3K/adapters_trim/TruSeq3-SE.fa:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
+               trimmomatic SE -phred33 -threads {threads} {input.rev} {output.rev} ILLUMINACLIP:{params.adapter}:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
                """
 
 rule fastqc_after:
-        input: rev="samples/trimmed/{smp}_R2_t.fastq"
-        output:rev="samples/fastqc_after/{smp}_R2_t_fastqc.zip"
+        input: rev="output/trimmed/{smp}_R2_t.fastq"
+        output:rev="output/fastqc_after/{smp}_R2_t_fastqc.zip"
         shell:"""
               echo "Quality control by fastqc of the trimmed R2 reads."
-              fastqc --outdir samples/fastqc_after/{wildcards.smp} --extract -f fastq {input.rev}
+              fastqc --outdir output/fastqc_after/{wildcards.smp} --extract -f fastq {input.rev}
               """
 
 rule bbsplit:
-        input: rev="samples/trimmed/{smp}_R2_t.fastq"
+        input: rev="output/trimmed/{smp}_R2_t.fastq"
         params: index = INDEX
-        output:basename="samples/bbsplit/{smp}_R2_t_out_%.sam",
-               fastq="samples/bbsplit/{smp}_R2_t_cleaned.fastq"
+        output:basename="output/bbsplit/{smp}_R2_t_out_%.sam",
+               fastq="output/bbsplit/{smp}_R2_t_cleaned.fastq"
         threads: 8
         shell:"""
               echo "Mapping the trimmed R2 reads to Human and Mouse reference genome."
