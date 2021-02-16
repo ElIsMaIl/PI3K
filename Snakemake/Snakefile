@@ -38,8 +38,8 @@ rule all:
     input:
         expand("output/fastqc/{smp}_R1_fastqc.zip", smp=SAMPLES),
         expand("output/fastqc/{smp}_R2_fastqc.zip", smp=SAMPLES),
-        expand("output/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
-        expand("output/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
+#        expand("output/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
+#        expand("output/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
 #        expand("output/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
 #        expand("output/bbsplit/{smp}_R2_t_cleaned.fastq", smp=SAMPLES)
 
@@ -51,27 +51,27 @@ rule fastqc:
                rev="output/fastqc/{smp}_R2_fastqc.zip"
         shell: """
                echo "Quality control by fastqc of the raw data." 
-               fastqc {input.fwd} {input.rev} -t {threads} -o output/fastqc/{wildcards.smp}
+               fastqc {input.fwd} {input.rev} -t {threads}
                """
 
-rule trimming:
-        input: rev="samples/raw_data/{smp}_R2.fastq"
-        params: adapter = ADAPTER_trim 
-        output:rev="output/trimmed/{smp}_R2_t.fastq"
-        threads: 8
-        shell: """
-               echo "Trimming by Trimmomatic of the raw R2 reads."
-               trimmomatic SE -phred33 -threads {threads} {input.rev} {output.rev} ILLUMINACLIP:{params.adapter}:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
-               """
+#rule trimming:
+#        input: rev="samples/raw_data/{smp}_R2.fastq"
+#        params: adapter = ADAPTER_trim 
+#        output:rev="output/trimmed/{smp}_R2_t.fastq"
+#        threads: 8
+#        shell: """
+#               echo "Trimming by Trimmomatic of the raw R2 reads."
+#               trimmomatic SE -phred33 -threads {threads} {input.rev} {output.rev} ILLUMINACLIP:{params.adapter}:2:30:10 LEADING:20 TRAILING:20 MINLEN:60
+#               """
 
-rule fastqc_after:
-        input: rev="output/trimmed/{smp}_R2_t.fastq"
-        threads: 8
-        output:rev="output/fastqc_after/{smp}_R2_t_fastqc.zip"
-        shell:"""
-              echo "Quality control by fastqc of the trimmed R2 reads."
-              fastqc {input.rev} -t {threads} -o output/fastqc_after/{wildcards.smp}
-              """
+#rule fastqc_after:
+#        input: rev="output/trimmed/{smp}_R2_t.fastq"
+#        threads: 8
+#        output:rev="output/fastqc_after/{smp}_R2_t_fastqc.zip"
+#        shell:"""
+#              echo "Quality control by fastqc of the trimmed R2 reads."
+#              fastqc {input.rev} -t {threads}
+#              """
 
 #rule bbsplit:
 #        input: rev="output/trimmed/{smp}_R2_t.fastq"
