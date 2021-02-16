@@ -37,7 +37,9 @@ NB_SAMPLES = len(SAMPLES)
 rule all:
     input:
         expand("output/fastqc/{smp}_R1_fastqc.zip", smp=SAMPLES),
+        expand("output/fastqc/{smp}_R1_fastqc.html", smp=SAMPLES),
         expand("output/fastqc/{smp}_R2_fastqc.zip", smp=SAMPLES),
+        expand("output/fastqc/{smp}_R2_fastqc.html",smp=SAMPLES)
 #        expand("output/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
 #        expand("output/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
 #        expand("output/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
@@ -48,17 +50,15 @@ rule fastqc:
                rev="samples/raw_data/{smp}_R2.fastq"
         threads: 8
         output: fwd="output/fastqc/{smp}_R1_fastqc.zip",
-                rev="output/fastqc/{smp}_R2_fastqc.zip"
+                fwd_html="output/fastqc/{smp}_R1_fastqc.html",
+                rev="output/fastqc/{smp}_R2_fastqc.zip",
+                rev_html="output/fastqc/{smp}_R2_fastqc.html"
         shell: """
                echo "Quality control by fastqc of the raw data."
                
                mkdir -p output/fastqc/
 
-               fastqc {input.fwd} {input.rev} -t {threads}
-               
-               cd samples/raw_data/
-               mv *.html output/fastqc/
-               mv *.zip output/fastqc/ 
+               fastqc {input.fwd} {input.rev} -t {threads} -o output/fastqc/
                """
 
 #rule trimming:
