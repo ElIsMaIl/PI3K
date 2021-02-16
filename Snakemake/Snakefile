@@ -51,7 +51,7 @@ rule fastqc:
                 rev="output/fastqc/{smp}_R2_fastqc.zip"
         shell: """
                echo "Quality control by fastqc of the raw data." 
-               fastqc {input.fwd} {input.rev} -t {threads}
+               fastqc {input.fwd} {input.rev} -t {threads} -o output/fastqc/{wildcards.smp} 
                """
 
 #rule trimming:
