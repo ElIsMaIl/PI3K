@@ -16,6 +16,6 @@ snakemake \
     --mem=64000 \
     -n 8 \
     -o $LOGDIR/%x-%j.log" \
-    -j 17 \
+    -j 49 \
     -p \
     --latency-wait 60 \
