@@ -13,9 +13,9 @@ set -x
 snakemake \
     --drmaa " \
     --nodes=1 \
-    --mem=64000 \
+    --mem=128000 \
     -n 8 \
     -o $LOGDIR/%x-%j.log" \
     -j 17 \
     -p \
-    --latency-wait 60 \
+    --latency-wait 120 \
