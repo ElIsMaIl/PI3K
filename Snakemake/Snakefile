@@ -43,7 +43,8 @@ rule all:
         #expand("output/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
         #expand("output/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
         #expand("output/fastqc_after/{smp}_R2_t_fastqc.html", smp=SAMPLES),
-        expand("output/bbsplit/{smp}_R2_t_out_%.sam", smp=SAMPLES),
+        expand("output/bbsplit/{smp}_R2_t_out_human.sam", smp=SAMPLES),
+        expand("output/bbsplit/{smp}_R2_t_out_mouse.sam", smp=SAMPLES),
         expand("output/bbsplit/{smp}_R2_t_cleaned_human.fastq", smp=SAMPLES),
         expand("output/bbsplit/{smp}_R2_t_cleaned_mouse.fastq", smp=SAMPLES)
 
@@ -88,13 +89,14 @@ rule all:
 rule bbsplit:
         input: rev="output/trimmed/{smp}_R2_t.fastq"
         params: index = INDEX
-        output: basename="output/bbsplit/{smp}_R2_t_out_%.sam",
+        output: basename_human="output/bbsplit/{smp}_R2_t_out_human.sam",
+                basename_mouse="output/bbsplit/{smp}_R2_t_out_mouse.sam",
                 fastq_human="output/bbsplit/{smp}_R2_t_cleaned_human.fastq",
                 fastq_mouse="output/bbsplit/{smp}_R2_t_cleaned_mouse.fastq"
         threads: 8
         shell:"""
               echo "Mapping the trimmed R2 reads to Human and Mouse reference genome."
-              bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 t={threads} ambiguous=all path={params.index} in={input.rev} basename={output.basename} out_human={output.fastq_human} out_mouse={output.fastq_mouse}
+              bbsplit.sh minratio=0.56 minhits=1 maxindel=16000 t={threads} ambiguous=all path={params.index} in={input.rev} basename={output.basename_human} {output.basename_mouse} out_human={output.fastq_human} out_mouse={output.fastq_mouse}
               """
 
 
