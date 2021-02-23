@@ -88,7 +88,7 @@ rule all:
 rule bbsplit:
         input: rev="output/trimmed/{smp}_R2_t.fastq"
         params: index = INDEX
-        output: basename_human="output/bbsplit/{smp}_R2_t_out__GRCh38.primary_assembly.genome.sam",
+        output: basename_human="output/bbsplit/{smp}_R2_t_out_GRCh38.primary_assembly.genome.sam",
                 basename_mouse="output/bbsplit/{smp}_R2_t_out_GRCm38.primary_assembly.genome.sam",
                 unmap="output/bbsplit/{smp}_R2_t_cleaned.fastq"
         threads: 8
