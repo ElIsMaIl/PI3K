@@ -43,8 +43,8 @@ rule all:
         #expand("output/trimmed/{smp}_R2_t.fastq", smp=SAMPLES),
         #expand("output/fastqc_after/{smp}_R2_t_fastqc.zip", smp=SAMPLES),
         #expand("output/fastqc_after/{smp}_R2_t_fastqc.html", smp=SAMPLES),
-        expand("output/bbsplit/{smp}_R2_t_out_human.sam", smp=SAMPLES),
-        expand("output/bbsplit/{smp}_R2_t_out_mouse.sam", smp=SAMPLES),
+        expand("output/bbsplit/{smp}_R2_t_out_GRCh38.primary_assembly.genome.sam", smp=SAMPLES),
+        expand("output/bbsplit/{smp}_R2_t_out_GRCm38.primary_assembly.genome.sam", smp=SAMPLES),
         expand("output/bbsplit/{smp}_R2_t_cleaned.fastq", smp=SAMPLES)
 
 #rule fastqc:
@@ -88,8 +88,8 @@ rule all:
 rule bbsplit:
         input: rev="output/trimmed/{smp}_R2_t.fastq"
         params: index = INDEX
-        output: basename_human="output/bbsplit/{smp}_R2_t_out_human.sam",
-                basename_mouse="output/bbsplit/{smp}_R2_t_out_mouse.sam",
+        output: basename_human="output/bbsplit/{smp}_R2_t_out__GRCh38.primary_assembly.genome.sam",
+                basename_mouse="output/bbsplit/{smp}_R2_t_out_GRCm38.primary_assembly.genome.sam",
                 unmap="output/bbsplit/{smp}_R2_t_cleaned.fastq"
         threads: 8
         shell:"""
