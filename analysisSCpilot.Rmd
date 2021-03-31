@@ -1,0 +1,253 @@
+---
+title: "Single cell sequencing of PDX models"
+description: |
+  Overview of data analysis for the pilot samples.
+author:
+  - name: Manuela Benary
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Data overview {#top}
+
+1. HNSCC-PDX (untreated, 1820): 
+    - The probe was separated after dissociation. One part was marked with a sample tag, the other was unlabeled. Both probes were loaded on the cartridge and translated into cDNA. The libraries were prepared for the sample tag as well as the target cDNA. They both have the same index.
+    - This approach was used to test the specifity of the sample tags.
+
+1. HNSCC-PDX (treated with alpelisib, 1822): 
+    - Right after dissociation the probe was loaded on the cartridge. This probe has no sample tag and has a different index. 
+
+# Material and Methods
+
+All probes have a spike-in with PhiX before the sequencing at the BIH Core Facility Genomics.
+
+## Sequencing
+
+Cells were sequenced with the BD Rhapsody System. This is a cartridge-based system, where single cells are loaded and lysed. During lysis RNA is coupled to beads and is subsequently reverse-transcribed into cDNA. The system allows to multiplex different samples, where each sample is marked with a specific sample tag. With this system it is also possible to analyse protein expression on a single cell level using antibody based sequencing.
+
+## Alignment and Demultiplexing
+
+- bbsplit  (using mouse and human) 
+  - so far no successful run possible
+- demultiplexing and alignment to human reference genome GrCH38 was done using 7bridges
+
+-> back to [top][Data overview]
+
+# Question and Tasks
+
+The major question in this project is how does Alpelisib-treatment change signaling in HNSCC. 
+
+Before we can do a signaling analysis, we have to solve a couple of technical tasks, which are detailed below:
+
+1. Warum gehen so viele Reads verloren? 
+    - das Trimming auf R1 ist nicht notwendig und evtl können so einige Reads erhalten bleiben
+    - die Parameter von Star-Aligner können noch optimiert werden
+2. Der GC-Gehalt ist geringer (42%) als erwartet - warum?
+    - Spike-In mit PhiX -> allerdings hat PhiX ein GC-Gehalt von 47%, das ist wahrscheinlich nicht der Grund
+    - die Kontamination mit PhiX ist ca 2% und sollte beim Alignment kein Problem darstellen
+    - aufgrund des nekrotischen Materials könnte mtRNA enriched sein -> aber auch hier liegt der GC-Gehalt theoretisch bei ~48% und ist wahrscheinlich nicht ausschlaggebend
+    - es könnte ein zelltyp-spezifischer Effekt sein -> sind bei HNC-Tumoren bestimmte RNAs überexprimiert?
+    - Nebenbaustelle: Der GC-Gehalt ist positionsabhängig mit einer Änderung an Position 8-9 -> woran liegt das?
+3. Wieviel % der Samples sind maus-spezifisch?
+
+    - Meines Wissens können PDX-Modelle bis zu 70-80\% stromal cells von Maus enthalten - Gibt es für Eure Modelle dafür Abschätzungen? Bei der RNA-Sequenzierung der Xenograft-abgeleiteten Organoide von der Peritonealkarzinose (Mathias ->EFRE-Projekt) wurde bis zu 80% Mausanteil in der Probe festgestellt. Mathias hat basierend der Daten vermutet, dass  der Anteil der Stromazellen von der Maus pro Passage zunimmt.  
+    - Vergleich von tagged sequences mit verschiedenen Alignment-Ansätzen.
+    - die aktuellen Parameter für das Alignment sind soweit unproblematisch
+    - unabhängiges Alignment auf Maus bzw Mensch suggeriert:
+        - Sample 1820 hat 18% human  vs 61% mouse
+        - Sample 1822 hat 20% human  vs 64% mouse
+4. Wieviele Zellen müssen am Anfang für die Sequenzierung genutzt werden?
+    - abhängig von:
+        - wieviele doublets / ungemappte Zellen fallen raus?
+        - wieviele sterbende / tote Zellen fallen raus?
+        - wieviel Zellen sind maus-spezifisch?
+        - gibt es in der unbehandelten Probe Cluster bzw Subtypen von Zellen, die berücksichtigt werden müssen?
+        
+-> back to [top][Data overview]
+
+# Outline of analysis steps
+
+We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point for the analysis of human single cells and refer to [@Luecken2019] as a guideline for the analysis of the count matrices.
+
+1. quality control
+
+    1. number of counts per cell
+    1. number of genes per cell
+    1. number of mitochondrial genes per cell
+  
+1. normalization
+  
+    1. on cellular counts
+    1. on gene level
+    
+1. data correction (batch / cell cycle effect ...) and integration
+
+    1. regressing out biological effects
+    1. regressing out technical effects
+    1. integration of multiple samples
+    
+1. expression recovery (denoising or imputation)
+1. feature selection and dimensionality reduction
+1. biological downstream analysis
+
+    1. clustering
+    1. pathway analysis
+    1. to be discussed ...
+    
+-> back to [top][Data overview]
+
+# Single cell analysis
+## quality control
+
+I started with the unfiltered data sets provided by 7bridges. When creating the Seurat-Object (analysis-tool for sc-RNAsequencing), I only keep cells with at least 200 genes covered which drastically reduced the number of cells. The overall number of genes and the number of cells are shown in the table below.
+
+```{r load-libraries}
+library(Matrix)
+library(Matrix.utils)
+library(tidyverse)
+library(Seurat)
+library(janitor)
+library(ggsci)
+library(cowplot)
+library(DT)
+```
+
+```{r load-data}
+load("data/unfilteredSeurat.Rdata")
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+
+mypal <- pal_jama()(2)
+```
+
+```{r set-thresholds}
+nFeature.lower <- 200
+nFeature.upper <- 1500
+mt.upper <- 5
+```
+
+The next plots show the quality measures: number of unique genes, total molecules and the percentage of mitochondrial genes as violin plots. A high number of genes indicate possible doublets, whereas a high percentage of mitochondrial genes indicate dying cells.
+
+```{r plot-qc, fig.keep="all"}
+p1 <- VlnPlot(list_seurat[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal[1]) 
+
+p1 <- lapply(p1, function(x){
+  x + xlab(Project(list_seurat[[1]])) +
+    theme(axis.text.x = element_blank(),
+          legend.position = "none")
+  })
+p1[[1]] <- p1[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p1[[3]] <- p1[[3]] + geom_hline(yintercept = mt.upper)
+
+plot_grid(plotlist = p1, nrow = 1)
+
+p2 <- VlnPlot(list_seurat[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal[2]) 
+
+p2 <- lapply(p2, function(x){
+  x + xlab(Project(list_seurat[[2]])) +
+    theme(axis.text.x = element_blank(), 
+          legend.position = "none")
+  })
+p2[[1]] <- p2[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p2[[3]] <- p2[[3]] + geom_hline(yintercept = mt.upper)
+
+plot_grid(plotlist = p2, nrow = 1)
+```
+
+```{r plot-qc-scatter}
+plot1 <- FeatureScatter(list_seurat[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal[1])
+plot1 <- plot1 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper) + 
+  scale_x_log10() + 
+  theme(legend.position = "none")
+
+plot2 <- FeatureScatter(list_seurat[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal[2])
+plot2 <- plot2 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper)+ 
+  scale_x_log10() +
+  theme(legend.position = "none")
+
+plot1 + plot2 
+```
+
+If we use the suggested thresholds for filtering cells, we are loosing roughly 2000 to 4000 cells.
+
+```{r remove-lq-cells}
+list_seurat <- lapply(list_seurat, function(exp) subset(exp, subset =
+                 nFeature_RNA > nFeature.lower &
+                 nFeature_RNA < nFeature.upper &
+                 percent.mt < mt.upper))
+
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+```
+
+## Normalization
+
+After selecting viable cells, the gene-counts were log-normalized and variable genes for each data set were detected. Although one sample was treated with alpelisib and the other left untreated, the most variable genes are similar in both samples.
+
+```{r normalize}
+list_seurat <- lapply(list_seurat, function(exp){
+  exp <- NormalizeData(exp, normalization.method = "LogNormalize", scale.factor = 10000)
+  exp <- FindVariableFeatures(exp, selection.method = "vst", nfeatures = 2000)
+})
+
+top10 <- head(VariableFeatures(list_seurat[[1]]), 10)
+plot1 <- VariableFeaturePlot(list_seurat[[1]], cols = c("gray", mypal[1]))
+plot1 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 <- plot1 + ggtitle(names(list_seurat)[1]) +
+  theme(legend.position = "bottom")
+
+top10 <- head(VariableFeatures(list_seurat[[2]]), 10)
+plot2 <- VariableFeaturePlot(list_seurat[[2]], cols = c("gray", mypal[2]))
+plot2 <- LabelPoints(plot = plot2, points = top10, repel = TRUE)
+plot2 <- plot2 + ggtitle(names(list_seurat)[2]) +
+  theme(legend.position = "bottom")
+  
+plot1 + plot2 
+```
+
+## Exploratory data analysis
+
+```{r dim-reduction}
+list_seurat <- lapply(list_seurat, function(exp){
+  all.genes <- rownames(exp)
+  exp <- ScaleData(exp, features = all.genes)
+  return(exp)  
+})
+
+list_seurat <- lapply(list_seurat, function(exp){
+  exp <- RunPCA(exp, features = VariableFeatures(object = exp))
+  exp <- RunUMAP(exp, dims = 1:10)
+  return(exp)
+})
+
+plot1 <- DimPlot(list_seurat[[1]], reduction = "umap", cols = mypal[1])
+plot2 <- DimPlot(list_seurat[[2]], reduction = "umap", cols = mypal[2])
+
+plot1 + plot2
+```
+
