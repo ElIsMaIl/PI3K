@@ -20,8 +20,8 @@ Investigation Publication Status
 Investigation Publication Status Term Accession Number		
 Investigation Publication Status Term Source REF		
 INVESTIGATION CONTACTS		
-Investigation Person Last Name	Keilholz	Benary		El-Ismail
-Investigation Person First Name	Ulrich		Manuela		Mohammad
+Investigation Person Last Name	Keilholz	Benary	El-Ismail
+Investigation Person First Name	Ulrich	Manuela	Mohammad
 Investigation Person Mid Initials		
 Investigation Person Email	ulrich.keilholz@charite.de	manuela.benary@bihealth.de	mohammad.el-ismail@charite.de
 Investigation Person Phone		
@@ -63,7 +63,7 @@ Study Assay Measurement Type Term Source REF
 Study Assay Technology Type	nucleotide sequencing	
 Study Assay Technology Type Term Accession Number		
 Study Assay Technology Type Term Source REF		
-Study Assay Technology Platform		RNA-Sequencing
+Study Assay Technology Platform	RNA-Sequencing
 STUDY PROTOCOLS		
 Study Protocol Name		
 Study Protocol Type		
@@ -80,8 +80,8 @@ Study Protocol Components Type
 Study Protocol Components Type Term Accession Number		
 Study Protocol Components Type Term Source REF		
 STUDY CONTACTS		
-Study Person Last Name	Keilholz 	Benary		El-Ismail
-Study Person First Name	Ulrich		Manuela		Mohammad
+Study Person Last Name	Keilholz 	Benary	El-Ismail
+Study Person First Name	Ulrich	Manuela	Mohammad
 Study Person Mid Initials		
 Study Person Email	ulrich.keilholz@charite.de	manuela.benary@bihealth.de	mohammad.el-ismail@charite.de
 Study Person Phone		
