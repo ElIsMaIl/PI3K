@@ -18,7 +18,33 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+options(scipen = 999)
+```
+
+```{r load-libraries}
+library(Matrix)
+library(Matrix.utils)
+library(tidyverse)
+library(Seurat)
+library(janitor)
+library(ggsci)
+library(ggpubr)
+library(cowplot)
+library(DT)
+library(biomaRt)
+source("helperFunctions.R")
+```
+
+```{r load-data}
+load("data/unfilteredSeurat_full.Rdata")
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  mutate(filter = "none") -> countCells
+
+mypal <- pal_jama()(2)
+
 ```
 
 # Data overview {#top}
@@ -78,6 +104,241 @@ Before we can do a signaling analysis, we have to solve a couple of technical ta
         
 -> back to [top][Data overview]
 
+# Analysis of pipeline results from 7bridges
+## Experimental design
+
+Changing the number of cells rather than the sequencing depth might be an option. See https://www.nature.com/articles/s41467-020-14482-y
+
+Changing cell number needs to be done before library preparation.
+
+## Quality Filters
+```{r bdQuality, layout="l-page"}
+fname <- "data/1820_Metrics_Summary.csv"
+readMetricsSummary(fname) %>% 
+  mutate(genome = "human") %>% 
+  bind_rows(readMetricsSummary("data/mouse_run/_1_1820_Metrics_Summary.csv") %>% mutate(genome = "mouse")) %>% 
+  filter(!is.na(value)) -> metrics
+
+metrics %>% 
+  datatable()
+```
+
+## Molecular index statistics
+
+PCR and sequencing errors within UMI sequence generate artifact molecules and contribute to over estimation of molecules. Molecular Index (MI) adjustment identify these artifacts and discard or re-assign them to their original index (from BD slides).
+
+```{r umiStatistics}
+read_csv("data/1820_UMI_Adjusted_Stats.csv", comment = "##") %>% 
+  mutate(genome = "human") %>% 
+  bind_rows(
+    read_csv("data/mouse_run/_1_1820_UMI_Adjusted_Stats.csv", comment = "##") %>% 
+      mutate(genome = "mouse")) -> umi.stats
+
+umi.stats %>% 
+  group_by(genome) %>% 
+  summarize(meanRSEC = mean(RSEC_Adjusted_Seq_Depth_without_Singletons))
+
+umi.stats %>% 
+  gghistogram(x = "RSEC_Adjusted_Seq_Depth_without_Singletons", fill = "Status", facet.by = "genome") + 
+  scale_x_log10() + 
+  geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
+```
+
+In general, this is a two-step process, including RSEC-adjustment and DBEC-adjustment
+
+1. Recursive Substitution Error Correction (RSEC)
+
+- Corrects for MI errors that are derived from sequencing base calls and PCR substitution errors
+- Based on edit distance of molecular indices
+- Similar method used by most other competitors/academic pipelines
+
+2. Distribution Based Error Correction (DBEC)
+
+- Adjusts for errors derived from library preparation steps or sequencing base deletions.
+- Based on distribution of sequencing coverage of molecular indices
+- Developed at BD Genomics
+
+Due to the low sequencing depth in our example (see threshold in Figure), DBEC-adjustment was not applied.
+
+## Cell label filtering
+
+The number of unique cell labels should be similar to the number of cells captured and amplified by the BD Rhapsody workflow. Causes of excess cell labels (from BD slides) :
+
+- Spill over of mRNA to the neighboring wells
+- Underloading beads in Rhapsody Cartridges: cells without beads and the RNA from the cells diffusing to adjacent wells
+- Experiencing low level contamination during oligonucleotide and bead synthesis
+- Generating errors during the PCR amplification steps of the workflow
+
+In our case, the analysis of cell labels indicates two cell populations with very different expression levels:
+
+![](data/cell_labeling_inflection.png)
+
+## Analysis of the RSEC data
+
+Based on a suggestion from the group of Simon Haas it makes sense to look at the result files with the RSEC-adjusted data.
+RSEC ... 
+
+```{r loadRSEC, eval=FALSE}
+fname <- "data/1820_SampleTag01_hs_tagcells_RSEC_MolsPerCell.csv"
+rsec.mols <- read_csv(fname, comment = "#")
+fname <- "data/1820_SampleTag01_hs_tagcells_RSEC_ReadsPerCell.csv"
+rsec.reads <- read_csv(fname, comment = "#")
+
+rsec.reads %>% 
+  pivot_longer(-Cell_Index, names_to = "gene") %>% 
+  filter(value > 0) -> rsec.reads.long
+
+rsec.reads.long %>% 
+  group_by(Cell_Index) %>% 
+  summarise(readsPerCell = sum(value)) %>% 
+  mutate(sample = "1820-human",
+         measure = "reads") -> rsec.read.sum
+
+rsec.mols %>% 
+  pivot_longer(-Cell_Index, names_to = "gene") %>% 
+  filter(value > 0) -> rsec.mols.long
+
+fname <- "data/mouse_run/_1_Combined_1820_RSEC_MolsPerCell.csv"
+rsec.mols <- read_csv(fname, comment = "#")
+fname <- "data/mouse_run/_1_Combined_1820_RSEC_ReadsPerCell.csv"
+rsec.reads <- read_csv(fname, comment = "#")
+
+rsec.reads %>% 
+  pivot_longer(-Cell_Index, names_to = "gene") %>% 
+  filter(value > 0) %>% 
+  group_by(Cell_Index) %>% 
+  summarise(readsPerCell = sum(value)) %>% 
+  mutate(sample = "1820-mouse",
+         measure = "reads") -> rsec.reads.sum.mouse
+
+rsec.mols %>% 
+  pivot_longer(-Cell_Index, names_to = "gene") %>% 
+  filter(value > 0) %>% 
+  group_by(Cell_Index) %>% 
+  summarise(readsPerCell = sum(value)) %>% 
+  mutate(sample = "1820-mouse",
+         measure = "mols") -> rsec.mols.sum.mouse
+
+rsec.mols.long %>% 
+  group_by(Cell_Index) %>% 
+  summarise(readsPerCell = sum(value)) %>% 
+  mutate(sample = "1820-human",
+         measure = "mols") %>% 
+  bind_rows(rsec.read.sum) %>% 
+  bind_rows(rsec.reads.sum.mouse) %>% 
+  bind_rows(rsec.mols.sum.mouse) %>% 
+  ggboxplot(x = "sample", y = "readsPerCell", fill = "measure") + 
+  scale_y_log10()
+```
+
+
+## Analysis of tagged cells 
+
+```{r loadTags}
+## for human ----
+fname <- "data/1820_Sample_Tag_ReadsPerCell.csv"
+read_csv(fname, comment = "#") %>% 
+  mutate(Cell_Index = paste("Cell_Index", Cell_Index, sep = "")) -> cell.annotation
+
+cell.annotation %>% 
+  pivot_longer(-Cell_Index, names_to = "SampleTag") %>% 
+  mutate(SampleTag = str_remove(SampleTag, "SampleTag")) %>% 
+  mutate(SampleTag = str_remove(SampleTag, "\\_hs")) %>% 
+  ggboxplot(x = "SampleTag", y = "value", rotate = TRUE) + 
+  scale_y_log10()
+
+cell.annotation %>% 
+  pivot_longer(-Cell_Index, names_to = "SampleTag") %>% 
+  mutate(SampleTag = str_remove(SampleTag, "SampleTag")) %>% 
+  mutate(SampleTag = str_remove(SampleTag, "\\_hs")) %>% 
+  filter(value > 0) %>% 
+  group_by(Cell_Index) %>% 
+  arrange(-value) %>% 
+  slice(1) -> cell.annotation
+
+tagged <- cell.annotation$SampleTag
+names(tagged) <- cell.annotation$Cell_Index
+
+list_seurat[[1]] <- AddMetaData(
+  object = list_seurat[[1]],
+  metadata = tagged,
+  col.name = "SampleTag")
+
+list_seurat[[1]] <- AddMetaData(
+  object = list_seurat[[1]],
+  metadata = Matrix::colSums(list_seurat[[1]], slot = 'counts'),
+  col.name = "reads_per_cell"
+)
+
+## for mouse ----
+fname <- "data/mouse_run/_1_1820_Sample_Tag_ReadsPerCell.csv"
+read_csv(fname, comment = "#") %>% 
+  mutate(Cell_Index = paste("Cell_Index", Cell_Index, sep = "")) -> mouse.annotation
+
+mouse.annotation %>% 
+  pivot_longer(-Cell_Index, names_to = "SampleTag") %>% 
+  mutate(SampleTag = str_remove(SampleTag, "SampleTag")) %>% 
+  mutate(SampleTag = str_remove(SampleTag, "\\_hs")) %>% 
+  filter(value > 0) %>% 
+  group_by(Cell_Index) %>% 
+  arrange(-value) %>% 
+  slice(1) -> mouse.annotation
+```
+
+```{r analyze-tagged-cells}
+list_seurat[[1]]@meta.data %>% 
+  as_tibble(rownames = "Cell_Index") %>% 
+  count(SampleTag) %>% 
+  filter(SampleTag == "01|stAbO") %>% 
+  pull(n) -> nrHumanCells
+
+nrCells <- 12644
+nrReads <- 50000
+
+list_seurat[[1]]@meta.data %>% 
+  as_tibble(rownames = "Cell_Index") %>% 
+  group_by(SampleTag) %>% 
+  summarize(mean = mean(reads_per_cell),
+            median = median(reads_per_cell),
+            min = min(reads_per_cell), 
+            max = max(reads_per_cell))
+```
+
+In sample 1820 human cells were tagged before the experiment. The experiment started with `r nrCells` cells of which `r nrHumanCells` cells are human cells, which is around `r round(nrHumanCells/nrCells*100)` % of the PDX model.
+
+For the initial test, `r nrReads` reads / cells were used for loading. The sequencing is paired end sequencing and all R1 reads are used for identifying cells and thus we should have `r nrReads/2` reads / cell in the best case. However, the reads per cell range from 224 to 3758, which is only a fraction (~ 15%) of the desired read count.
+
+```{r plot-read-counts}
+cell.annotation %>% 
+  ggboxplot(x = "SampleTag", y = "value", fill = "SampleTag", palette = "jco",
+            rotate = TRUE, title = "human genome") +
+  theme(legend.position = "none") +
+  scale_y_log10() -> p1
+
+mouse.annotation %>% 
+  ggboxplot(x = "SampleTag", y = "value", fill = "SampleTag", palette = "jco",
+            rotate = TRUE, title = "mouse genome")  +
+  theme(legend.position = "none") +
+  scale_y_log10() -> p2
+
+cell.annotation %>% 
+  mutate(human = TRUE) %>% 
+  full_join(mouse.annotation %>% mutate(mouse = TRUE)) %>% 
+  ggboxplot(x = "SampleTag", y = "value", fill = "mouse", palette = "jco", group = "mouse",  
+            rotate = TRUE, title = "mouse genome")  +
+  theme(legend.position = "none") +
+  scale_y_log10() 
+
+
+p1 + p2
+```
+
+Note 1: Even if we assume that 15% of the reads are PhiX spike in, we should still have around `r nrReads * .85 / 2` reads per cell.
+Note 2: Results from the Haas-Lab show that cells retain about 60%-80% of the initial number of reads
+
+
+-> back to [top][Data overview]
+
 # Outline of analysis steps
 
 We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point for the analysis of human single cells and refer to [@Luecken2019] as a guideline for the analysis of the count matrices.
@@ -114,26 +375,6 @@ We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point
 
 I started with the unfiltered data sets provided by 7bridges. When creating the Seurat-Object (analysis-tool for sc-RNAsequencing), I only keep cells with at least 200 genes covered which drastically reduced the number of cells. The overall number of genes and the number of cells are shown in the table below.
 
-```{r load-libraries}
-library(Matrix)
-library(Matrix.utils)
-library(tidyverse)
-library(Seurat)
-library(janitor)
-library(ggsci)
-library(cowplot)
-library(DT)
-```
-
-```{r load-data}
-load("data/unfilteredSeurat.Rdata")
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
-
-mypal <- pal_jama()(2)
-```
 
 ```{r set-thresholds}
 nFeature.lower <- 200
@@ -171,8 +412,40 @@ p2[[3]] <- p2[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p2, nrow = 1)
 ```
 
-```{r plot-qc-scatter}
-plot1 <- FeatureScatter(list_seurat[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+Based on the violin plots one can already see that quite a few number of cells have a very low count of genes detected. These are most likely not real cells but rather debris. Thus, in a first step I removed all cells which have less than `r nFeature.lower` genes. In the next step, all cells with a very high (> `r nFeature.upper`) gene count were removed. And finally, all cells with a high percentage of mitochondrial genes (> `r mt.upper`%) are removed.
+
+
+```{r remove-debris}
+list_seurat <- lapply(list_seurat, function(exp) subset(exp, subset = nFeature_RNA > nFeature.lower))
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  mutate(filter = "debris") %>% 
+  bind_rows(countCells) -> countCells
+
+list_seurat <- lapply(list_seurat, function(exp) subset(exp, subset = nFeature_RNA < nFeature.upper))
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  mutate(filter = "doublets") %>% 
+  bind_rows(countCells) -> countCells
+
+list_seurat <- lapply(list_seurat, function(exp) subset(exp, subset = percent.mt < mt.upper))
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  mutate(filter = "apoptosis") %>% 
+  bind_rows(countCells) -> countCells
+
+countCells %>% 
+  pivot_wider(names_from = "dim", values_from = "value") %>% 
+  arrange(experiment, -nrCells) %>% 
+  dplyr::select(-nrGenes) %>% 
+  datatable()
+```
+
+```{r plot-qc-scatter, eval = FALSE}
+plot1 <- FeatureScatter(list_seurat[[1]], feature1 = "nFeature_RNA", feature2 = "percent.mt",
                         cols = mypal[1])
 plot1 <- plot1 +
   geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
@@ -180,7 +453,7 @@ plot1 <- plot1 +
   scale_x_log10() + 
   theme(legend.position = "none")
 
-plot2 <- FeatureScatter(list_seurat[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+plot2 <- FeatureScatter(list_seurat[[2]], feature1 = "nFeature_RNA", feature2 = "percent.mt",
                         cols = mypal[2])
 plot2 <- plot2 +
   geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
@@ -189,20 +462,6 @@ plot2 <- plot2 +
   theme(legend.position = "none")
 
 plot1 + plot2 
-```
-
-If we use the suggested thresholds for filtering cells, we are loosing roughly 2000 to 4000 cells.
-
-```{r remove-lq-cells}
-list_seurat <- lapply(list_seurat, function(exp) subset(exp, subset =
-                 nFeature_RNA > nFeature.lower &
-                 nFeature_RNA < nFeature.upper &
-                 percent.mt < mt.upper))
-
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
 ```
 
 ## Normalization
@@ -232,7 +491,9 @@ plot1 + plot2
 
 ## Exploratory data analysis
 
-```{r dim-reduction}
+One could assume, that the untagged cells in sample 1820 belong to the surrounding mouse tissue and thus show a different expression and can be distinguished in a UMAP. This is not the case (see left UMAP below). 
+
+```{r dim-reduction, eval=FALSE}
 list_seurat <- lapply(list_seurat, function(exp){
   all.genes <- rownames(exp)
   exp <- ScaleData(exp, features = all.genes)
@@ -245,9 +506,50 @@ list_seurat <- lapply(list_seurat, function(exp){
   return(exp)
 })
 
-plot1 <- DimPlot(list_seurat[[1]], reduction = "umap", cols = mypal[1])
+plot1 <- DimPlot(list_seurat[[1]], reduction = "umap", group.by = "Sample_Tag",
+                 cols = pal_jco()(3))
 plot2 <- DimPlot(list_seurat[[2]], reduction = "umap", cols = mypal[2])
+```
 
-plot1 + plot2
+Also the cell cycle phases in 1820 (as well as 1822) does not seem to play a role.
+
+```{r cell-cycle, eval=FALSE}
+s.genes <- cc.genes$s.genes
+g2m.genes <- cc.genes$g2m.genes
+
+list_seurat[[1]] <- CellCycleScoring(list_seurat[[1]], s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+p3 <- DimPlot(list_seurat[[1]], reduction = "umap", group.by = "Phase",
+                 cols = pal_npg()(3)) + ggtitle("Sample 1820")
+
+list_seurat[[2]] <- CellCycleScoring(list_seurat[[2]], s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+
+p4 <- DimPlot(list_seurat[[2]], reduction = "umap", group.by = "Phase",
+                 cols = pal_npg()(3)) + ggtitle("Sample 1822")
+
+plot1 + p3 + p4
+```
+
+
+In the fastq-quality control the overall GC content was around 42%. One reason could be the amount of lnc-RNAs which are very rich in AT . To test this hypothesis, I filtered for lnc-RNA
+
+```{r lnc-biomart, eval = FALSE}
+mart1 = useMart("ensembl", dataset="hsapiens_gene_ensembl")
+prio.genes <- rownames(list_seurat[[1]])
+getBM(attributes = c("hgnc_symbol", "ensembl_gene_id", "gene_biotype", "transcript_biotype"),
+        filters = "hgnc_symbol", 
+        mart = mart1,
+        values = prio.genes,
+        uniqueRows = TRUE,
+        bmHeader = T) %>% 
+    clean_names() %>% 
+    rename(ensembl_gene_id = gene_stable_id) -> prio.genes
+
+prio.genes %>% 
+  as_tibble() %>% 
+  dplyr::select(-transcript_type) %>% 
+  distinct() %>% 
+  filter(gene_type == "lncRNA") %>% 
+  filter(hgnc_symbol %in% rownames(list_seurat[[1]]))
 ```
 
