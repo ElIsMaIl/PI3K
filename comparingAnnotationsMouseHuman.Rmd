@@ -38,6 +38,7 @@ source("helperFunctions.R")
 
 - [ ] Translate German text into English
 - [ ] Create Seurat Objects all samples with human annotation vs mouse annotation (4 Seurat objects)
+- [ ] Show overview table of annotation-structure (gene types and numbers) for BD Rhapsody vs CHR (here also mouse vs human) -> section "Annotation and Mapping"
 - [ ] Create figure of position-based GC content for both samples -> we would like to see whether the AT-content is enriched at the ends of the reads
 - [ ] Create comparative table of the 4 annotations ->  wide format with columns for each sample and each annotation (Section Quality Filters)
 - [ ] Prepare overview figure for molecular index statistics -> facet_grid (annotation ~ sample)
@@ -121,6 +122,7 @@ Changing the number of cells rather than the sequencing depth might be an option
 
 Changing cell number needs to be done before library preparation.
 
+## Annotation and Mapping
 ## Quality Filters
 ```{r bdQuality, layout="l-page"}
 fname <- "data/1820_Metrics_Summary.csv"
