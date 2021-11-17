@@ -88,30 +88,29 @@ The major question in this project is how does Alpelisib-treatment change signal
 
 Before we can do a signaling analysis, we have to solve a couple of technical tasks, which are detailed below:
 
-1. Warum gehen so viele Reads verloren? 
-    - das Trimming auf R1 ist nicht notwendig und evtl können so einige Reads erhalten bleiben
-    - die Parameter von Star-Aligner können noch optimiert werden
-2. Der GC-Gehalt ist geringer (42%) als erwartet - warum?
-    - Spike-In mit PhiX -> allerdings hat PhiX ein GC-Gehalt von 47%, das ist wahrscheinlich nicht der Grund
-    - die Kontamination mit PhiX ist ca 2% und sollte beim Alignment kein Problem darstellen
-    - aufgrund des nekrotischen Materials könnte mtRNA enriched sein -> aber auch hier liegt der GC-Gehalt theoretisch bei ~48% und ist wahrscheinlich nicht ausschlaggebend
-    - es könnte ein zelltyp-spezifischer Effekt sein -> sind bei HNC-Tumoren bestimmte RNAs überexprimiert?
-    - Nebenbaustelle: Der GC-Gehalt ist positionsabhängig mit einer Änderung an Position 8-9 -> woran liegt das?
-    - Struktur der Libraries ist PolyA -> wird das wirklich rausgeschnitten -> falls nicht, sollte es ein Enrichment an den Enden geben
-3. Wieviel % der Samples sind maus-spezifisch?
-
-    - Meines Wissens können PDX-Modelle bis zu 70-80\% stromal cells von Maus enthalten - Gibt es für Eure Modelle dafür Abschätzungen? Bei der RNA-Sequenzierung der Xenograft-abgeleiteten Organoide von der Peritonealkarzinose (Mathias ->EFRE-Projekt) wurde bis zu 80% Mausanteil in der Probe festgestellt. Mathias hat basierend der Daten vermutet, dass  der Anteil der Stromazellen von der Maus pro Passage zunimmt.  
-    - Vergleich von tagged sequences mit verschiedenen Alignment-Ansätzen.
-    - die aktuellen Parameter für das Alignment sind soweit unproblematisch
-    - unabhängiges Alignment auf Maus bzw Mensch suggeriert:
-        - Sample 1820 hat 18% human  vs 61% mouse
-        - Sample 1822 hat 20% human  vs 64% mouse
-4. Wieviele Zellen müssen am Anfang für die Sequenzierung genutzt werden?
-    - abhängig von:
-        - wieviele doublets / ungemappte Zellen fallen raus?
-        - wieviele sterbende / tote Zellen fallen raus?
-        - wieviel Zellen sind maus-spezifisch?
-        - gibt es in der unbehandelten Probe Cluster bzw Subtypen von Zellen, die berücksichtigt werden müssen?
+1. Why do we lose a lot of Reads ? 
+    - trimming of R1 is not necessary and possibly some reads can be preserved this way
+    - the parameters of the STAR- Aligner can still be optimized
+2. GC content is lower than expected (42%) - why?
+    - spike-in with PhiX -> however PhiX has a GC content of 47%, this is probably not the reason
+    - contamination with PhiX is about 2% and should not be a problem for alignment
+    - due to the necrotic material mtRNA could be enriched -> but also here the GC content is theoretically ~48% and is probably not crucial
+    - it could be a cell type specific effect -> are certain RNAs overexpressed in HNC tumors?
+    - Minor point: GC content is position dependent with a change at position 8-9 -> what is the reason for this?
+    - Structure of libraries is polyA -> is this really edited out -> if not, there should be enrichment at the end
+3. How many % of the samples are mouse specific?
+    - to my knowledge PDX models can contain up to 70-80\% mouse stromal cells - Are there any estimates for this for your models? RNA sequencing of xenograft-derived organoids from peritoneal carcinomatosis (Mathias ->EFRE project) found up to 80% mouse content in the sample. Mathias hypothesized based on the data that the proportion of stromal cells from mouse increases per passage.  
+    - comparison of tagged sequences with different alignment approaches.
+    - the current parameters for the alignment are unproblematic so far
+    - independent alignment on mouse or human suggests:
+        - Sample 1820 has 18% human vs 61% mouse
+        - sample 1822 has 20% human vs 64% mouse
+4. How many cells must be used for sequencing at the beginning?
+    - depending on:
+        - how many doublets / unmapped cells fall out?
+        - how many dying / dead cells fall out?
+        - how many cells are mouse-specific?
+        - are there clusters or subtypes of cells in the untreated sample that need to be considered?
         
 -> back to [top][Data overview]
 
