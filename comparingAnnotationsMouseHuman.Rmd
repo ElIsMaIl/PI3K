@@ -98,13 +98,25 @@ Before we can do a signaling analysis, we have to solve a couple of technical ta
     - it could be a cell type specific effect -> are certain RNAs overexpressed in HNC tumors?
     - Minor point: GC content is position dependent with a change at position 8-9 -> what is the reason for this?
     - Structure of libraries is polyA -> is this really edited out -> if not, there should be enrichment at the end
+![](plots/fastqc_per_sequence_gc_content_plot_1820.png) 
+This plot shows the GC Content per sequence in the 1820 sample.
+![](plots/fastqc_per_sequence_gc_content_plot_1822.png)
+This plot shows the GC Content per sequence in the 1822 sample.
+    
+    
 3. How many % of the samples are mouse specific?
     - to my knowledge PDX models can contain up to 70-80\% mouse stromal cells - Are there any estimates for this for your models? RNA sequencing of xenograft-derived organoids from peritoneal carcinomatosis (Mathias ->EFRE project) found up to 80% mouse content in the sample. Mathias hypothesized based on the data that the proportion of stromal cells from mouse increases per passage.  
     - comparison of tagged sequences with different alignment approaches.
     - the current parameters for the alignment are unproblematic so far
-    - independent alignment on mouse or human suggests:
-        - Sample 1820 has 18% human vs 61% mouse
+    - independent alignment on mouse or human suggests, using the annotation file provided by 7bridges:
+        - sample 1820 has 18% human vs 61% mouse
         - sample 1822 has 20% human vs 64% mouse
+    - independent alignment on human suggests, using the long non-coding annotation file:
+        - sample 1820 has 37% human 
+        - sample 1822 has 40% human 
+    - independent alignment on mouse or human suggests, using the comprehensive annotation file:
+        - sample 1820 has 41% human vs 70% mouse
+        - sample 1822 has 42% human vs 71% mouse
 4. How many cells must be used for sequencing at the beginning?
     - depending on:
         - how many doublets / unmapped cells fall out?
@@ -122,6 +134,24 @@ Changing the number of cells rather than the sequencing depth might be an option
 Changing cell number needs to be done before library preparation.
 
 ## Annotation and Mapping
+To create the index files for the mapping step with the STAR-Aligner we used three different annotation files per sample and genome (Human & Mouse).
+The first annotation file was provided by 7bridges.
+PRI - It contains the comprehensive gene annotation on the primary assembly (chromosomes and scaffolds) sequence regions
+    - This is a superset of the main annotation file
+The next annotation file was used because we are thinking that long non-coding RNA is playing an important role in HNSCC.
+NLC - It contains the comprehensive gene annotation of lncRNA genes on the reference chromosomes
+    - This is a subset of the main annotation file
+The third annotation file was used because we did-not found any mtRNA in the long non-coding RNA annotation file. Thats why we used the comprehensive gene annotation file which contains gene types from both other annotations.
+CHR - It contains the comprehensive gene annotation on the reference chromosomes only
+    - This is the main annotation file for most users
+The tables below show the three annotations files for human and mouse. It contains the different gene types and their number in each of the files. 
+```{r gtf_tables, max.print: 1}
+table_human <- read_csv("data/Gtf_Annotation/gtf_table.csv")
+table_mouse <- read_csv("data/Gtf_Annotation/gtf_table_mouse.csv")
+table_human
+table_mouse
+```
+
 ## Quality Filters
 ```{r bdQuality, layout="l-page"}
 fname <- "data/1820_Metrics_Summary.csv"
@@ -181,6 +211,11 @@ The number of unique cell labels should be similar to the number of cells captur
 - Generating errors during the PCR amplification steps of the workflow
 
 In our case, the analysis of cell labels indicates two cell populations with very different expression levels:
-
-![](data/cell_labeling_inflection.png)
-
+The following four plots show the samples which were aligned to the human genome.
+![](plots/1820_Cell_Label_Filter_Human.png)
+![](plots/1820_Cell_Label_Second_Derivative_Curve_Human.png)
+![](plots/1822_Cell_Label_Filter.png)
+![](plots/1822_Cell_Label_Second_Derivative_Curve.png)
+The next four plots show the samples which were aligned to the mouse genome.
+![](plots/1820_Cell_Label_Filter_Mouse.png)
+![](plots/1820_Cell_Label_Second_Derivative_Curve_mouse.png)
