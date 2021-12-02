@@ -1,48 +1,48 @@
-"";"Gene_Type";"gtf_nlc";"gtf_pri";"gtf_chr"
-"1";"3prime_overlapping_ncRNA";148;148;148
-"2";"antisense";46636;46636;46636
-"3";"bidirectional_promoter_lncRNA";1468;1468;1468
-"4";"lincRNA";61986;61986;61986
-"5";"macro_lncRNA";3;3;3
-"6";"non_coding";6;6;6
-"7";"processed_transcript";19045;19045;19045
-"8";"sense_intronic";3577;3577;3577
-"9";"sense_overlapping";1506;1506;1506
-"10";"TEC";3250;3250;3250
-"11";"IG_C_gene";NA;296;296
-"12";"IG_C_pseudogene";NA;33;33
-"13";"IG_D_gene";NA;152;152
-"14";"IG_J_gene";NA;76;76
-"15";"IG_J_pseudogene";NA;9;9
-"16";"IG_pseudogene";NA;3;3
-"17";"IG_V_gene";NA;1169;1169
-"18";"IG_V_pseudogene";NA;664;664
-"19";"miRNA";NA;5643;5643
-"20";"misc_RNA";NA;6666;6639
-"21";"Mt_rRNA";NA;6;6
-"22";"Mt_tRNA";NA;66;66
-"23";"polymorphic_pseudogene";NA;1796;1796
-"24";"processed_pseudogene";NA;32231;32225
-"25";"protein_coding";NA;2503156;2502533
-"26";"pseudogene";NA;92;76
-"27";"ribozyme";NA;24;24
-"28";"rRNA";NA;174;156
-"29";"rRNA_pseudogene";NA;1500;1500
-"30";"scaRNA";NA;147;147
-"31";"scRNA";NA;3;3
-"32";"snoRNA";NA;2853;2853
-"33";"snRNA";NA;5727;5700
-"34";"sRNA";NA;15;15
-"35";"TR_C_gene";NA;70;70
-"36";"TR_D_gene";NA;16;16
-"37";"TR_J_gene";NA;316;316
-"38";"TR_J_pseudogene";NA;12;12
-"39";"TR_V_gene";NA;826;826
-"40";"TR_V_pseudogene";NA;123;123
-"41";"transcribed_processed_pseudogene";NA;3834;3834
-"42";"transcribed_unitary_pseudogene";NA;4552;4552
-"43";"transcribed_unprocessed_pseudogene";NA;18968;18968
-"44";"translated_processed_pseudogene";NA;8;8
-"45";"unitary_pseudogene";NA;482;482
-"46";"unprocessed_pseudogene";NA;13398;13398
-"47";"vaultRNA";NA;3;3
+"Gene_Type" "gtf_nlc" "gtf_pri" "gtf_chr"
+"1" "3prime_overlapping_ncRNA" 148 148 148
+"2" "antisense" 46636 46636 46636
+"3" "bidirectional_promoter_lncRNA" 1468 1468 1468
+"4" "lincRNA" 61986 61986 61986
+"5" "macro_lncRNA" 3 3 3
+"6" "non_coding" 6 6 6
+"7" "processed_transcript" 19045 19045 19045
+"8" "sense_intronic" 3577 3577 3577
+"9" "sense_overlapping" 1506 1506 1506
+"10" "TEC" 3250 3250 3250
+"11" "IG_C_gene" NA 296 296
+"12" "IG_C_pseudogene" NA 33 33
+"13" "IG_D_gene" NA 152 152
+"14" "IG_J_gene" NA 76 76
+"15" "IG_J_pseudogene" NA 9 9
+"16" "IG_pseudogene" NA 3 3
+"17" "IG_V_gene" NA 1169 1169
+"18" "IG_V_pseudogene" NA 664 664
+"19" "miRNA" NA 5643 5643
+"20" "misc_RNA" NA 6666 6639
+"21" "Mt_rRNA" NA 6 6
+"22" "Mt_tRNA" NA 66 66
+"23" "polymorphic_pseudogene" NA 1796 1796
+"24" "processed_pseudogene" NA 32231 32225
+"25" "protein_coding" NA 2503156 2502533
+"26" "pseudogene" NA 92 76
+"27" "ribozyme" NA 24 24
+"28" "rRNA" NA 174 156
+"29" "rRNA_pseudogene" NA 1500 1500
+"30" "scaRNA" NA 147 147
+"31" "scRNA" NA 3 3
+"32" "snoRNA" NA 2853 2853
+"33" "snRNA" NA 5727 5700
+"34" "sRNA" NA 15 15
+"35" "TR_C_gene" NA 70 70
+"36" "TR_D_gene" NA 16 16
+"37" "TR_J_gene" NA 316 316
+"38" "TR_J_pseudogene" NA 12 12
+"39" "TR_V_gene" NA 826 826
+"40" "TR_V_pseudogene" NA 123 123
+"41" "transcribed_processed_pseudogene" NA 3834 3834
+"42" "transcribed_unitary_pseudogene" NA 4552 4552
+"43" "transcribed_unprocessed_pseudogene" NA 18968 18968
+"44" "translated_processed_pseudogene" NA 8 8
+"45" "unitary_pseudogene" NA 482 482
+"46" "unprocessed_pseudogene" NA 13398 13398
+"47" "vaultRNA" NA 3 3

@@ -36,13 +36,13 @@ library(biomaRt)
 source("helperFunctions.R")
 ```
 
-- [ ] Translate German text into English
-- [ ] Create Seurat Objects all samples with human annotation vs mouse annotation (4 Seurat objects)
-- [ ] Show overview table of annotation-structure (gene types and numbers) for BD Rhapsody vs CHR (here also mouse vs human) -> section "Annotation and Mapping"
-- [ ] Create figure of position-based GC content for both samples -> we would like to see whether the AT-content is enriched at the ends of the reads
+- [x] Translate German text into English
+- [x] Create Seurat Objects all samples with human annotation vs mouse annotation (4 Seurat objects)
+- [x] Show overview table of annotation-structure (gene types and numbers) for BD Rhapsody vs CHR (here also mouse vs human) -> section "Annotation and Mapping"
+- [x] Create figure of position-based GC content for both samples -> we would like to see whether the AT-content is enriched at the ends of the reads
 - [ ] Create comparative table of the 4 annotations ->  wide format with columns for each sample and each annotation (Section Quality Filters)
 - [ ] Prepare overview figure for molecular index statistics -> facet_grid (annotation ~ sample)
-- [ ] Prepare overview figure for Cell label filtering with similar structure of molecular index statistics
+- [x] Prepare overview figure for Cell label filtering with similar structure of molecular index statistics
 - [ ] Add legends to all figures and tables -> use chunk-options
 - [ ] Read the paper from Aznaourova et al (https://doi.org/10.1101/2021.11.05.467458) and summarize relevant method points for the analysis of lncRNA using BD Rhapsody
 
@@ -102,8 +102,6 @@ Before we can do a signaling analysis, we have to solve a couple of technical ta
 This plot shows the GC Content per sequence in the 1820 sample.
 ![](plots/fastqc_per_sequence_gc_content_plot_1822.png)
 This plot shows the GC Content per sequence in the 1822 sample.
-    
-    
 3. How many % of the samples are mouse specific?
     - to my knowledge PDX models can contain up to 70-80\% mouse stromal cells - Are there any estimates for this for your models? RNA sequencing of xenograft-derived organoids from peritoneal carcinomatosis (Mathias ->EFRE project) found up to 80% mouse content in the sample. Mathias hypothesized based on the data that the proportion of stromal cells from mouse increases per passage.  
     - comparison of tagged sequences with different alignment approaches.
@@ -148,8 +146,9 @@ The tables below show the three annotations files for human and mouse. It contai
 ```{r gtf_tables, max.print: 1}
 table_human <- read_csv("data/Gtf_Annotation/gtf_table.csv")
 table_mouse <- read_csv("data/Gtf_Annotation/gtf_table_mouse.csv")
-table_human
-table_mouse
+dt_human <- datatable(table_human, extensions = "Scroller", width = 1000, options= list(scrolly = 200, scroller = T, scrollX = 200, pageLength = 1))
+dt_mouse <- datatable(table_mouse, extensions = "Scroller", width = 1000, options= list(scrolly = 200, scroller = T, scrollX = 200, pageLength = 1))
+dt_human
 ```
 
 ## Quality Filters
@@ -211,11 +210,12 @@ The number of unique cell labels should be similar to the number of cells captur
 - Generating errors during the PCR amplification steps of the workflow
 
 In our case, the analysis of cell labels indicates two cell populations with very different expression levels:
-The following four plots show the samples which were aligned to the human genome.
-![](plots/1820_Cell_Label_Filter_Human.png)
+The following next plots show the samples which were aligned to the human genome.
+
 ![](plots/1820_Cell_Label_Second_Derivative_Curve_Human.png)
-![](plots/1822_Cell_Label_Filter.png)
+
 ![](plots/1822_Cell_Label_Second_Derivative_Curve.png)
-The next four plots show the samples which were aligned to the mouse genome.
-![](plots/1820_Cell_Label_Filter_Mouse.png)
+The next two plots show the samples which were aligned to the mouse genome.
+
 ![](plots/1820_Cell_Label_Second_Derivative_Curve_mouse.png)
+![](plots/1822_Cell_Label_Second_Derivative_Curve_mouse.png)
