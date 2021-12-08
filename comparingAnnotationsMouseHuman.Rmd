@@ -26,7 +26,9 @@ options(scipen = 999)
 library(Matrix)
 library(Matrix.utils)
 library(tidyverse)
+library(rtracklayer)
 library(Seurat)
+library(knitr)
 library(janitor)
 library(ggsci)
 library(ggpubr)
@@ -38,12 +40,12 @@ source("helperFunctions.R")
 
 - [x] Translate German text into English
 - [x] Create Seurat Objects all samples with human annotation vs mouse annotation (4 Seurat objects)
-- [ ] Show overview table of annotation-structure (gene types and numbers) for BD Rhapsody vs CHR (here also mouse vs human) -> section "Annotation and Mapping"
+- [x] Show overview table of annotation-structure (gene types and numbers) for BD Rhapsody vs CHR (here also mouse vs human) -> section "Annotation and Mapping"
 - [x] Create figure of position-based GC content for both samples -> we would like to see whether the AT-content is enriched at the ends of the reads
 - [x] Create comparative table of the 4 annotations ->  wide format with columns for each sample and each annotation (Section Quality Filters)
 - [x] Prepare overview figure for molecular index statistics -> facet_grid (annotation ~ sample)
 - [x] Prepare overview figure for Cell label filtering with similar structure of molecular index statistics
-- [ ] Add legends to all figures and tables -> use chunk-options
+- [x] Add legends to all figures and tables -> use chunk-options
 - [ ] Read the paper from Aznaourova et al (https://doi.org/10.1101/2021.11.05.467458) and summarize relevant method points for the analysis of lncRNA using BD Rhapsody
 
 ```{r load-data, eval=FALSE}
@@ -102,10 +104,12 @@ Before we can do a signaling analysis, we have to solve a couple of technical ta
     - it could be a cell type specific effect -> are certain RNAs overexpressed in HNC tumors?
     - Minor point: GC content is position dependent with a change at position 8-9 -> what is the reason for this?
     - Structure of libraries is polyA -> is this really edited out -> if not, there should be enrichment at the end
-![](plots/fastqc_per_sequence_gc_content_plot_1820.png) 
-This plot shows the GC Content per sequence in the 1820 sample.
-![](plots/fastqc_per_sequence_gc_content_plot_1822.png)
-This plot shows the GC Content per sequence in the 1822 sample.
+    
+```{r fig.cap= "GC Content plot from the 1820 & 1822 sample.", layout="l-page"}
+include_graphics("plots/fastqc_per_sequence_gc_content_plot_1820.png")
+include_graphics("plots/fastqc_per_sequence_gc_content_plot_1822.png")
+```
+
 3. How many % of the samples are mouse specific?
     - to my knowledge PDX models can contain up to 70-80\% mouse stromal cells - Are there any estimates for this for your models? RNA sequencing of xenograft-derived organoids from peritoneal carcinomatosis (Mathias ->EFRE project) found up to 80% mouse content in the sample. Mathias hypothesized based on the data that the proportion of stromal cells from mouse increases per passage.  
     - comparison of tagged sequences with different alignment approaches.
@@ -132,7 +136,6 @@ This plot shows the GC Content per sequence in the 1822 sample.
 ## Experimental design
 
 Changing the number of cells rather than the sequencing depth might be an option. See https://www.nature.com/articles/s41467-020-14482-y
-
 Changing cell number needs to be done before library preparation.
 
 ## Annotation and Mapping
@@ -147,6 +150,59 @@ The third annotation file was used because we did-not found any mtRNA in the lon
 CHR - It contains the comprehensive gene annotation on the reference chromosomes only
     - This is the main annotation file for most users
 The tables below show the three annotations files for human and mouse. It contains the different gene types and their number in each of the files. 
+
+```{r gtf_tables, layout="l-page"}
+## load data
+gtf_nlc <- as.data.frame(import("data/Gtf_Annotation/Human/gencode.v29.long_noncoding_RNAs.gtf"))%>% 
+  dplyr::select(gene_type) %>% 
+  count(gene_type)
+
+gtf_pri <- as.data.frame(import("data/Gtf_Annotation/Human/gencode.v29.primary_assembly.annotation.gtf")) %>%
+  dplyr::select(gene_type) %>% 
+  count(gene_type)
+  
+gtf_chr <- as.data.frame(import("data/Gtf_Annotation/Human/gencode.v29.annotation.gtf")) %>%
+  dplyr::select(gene_type) %>% 
+  count(gene_type)
+
+
+## combine dataframes to one table
+table_gtfs <- full_join(gtf_nlc, gtf_pri, by = 'gene_type', all=TRUE) %>%
+  full_join(., gtf_chr, by = 'gene_type', all=TRUE)
+
+names(table_gtfs) <- c("Gene_Type", "gtf_nlc", "gtf_pri", "gtf_chr")
+
+table_gtfs %>%
+  datatable()
+
+```
+
+
+```{r gtf_mouse, layout="l-page"}
+## load data
+nlc_mouse <- as.data.frame(import("data/Gtf_Annotation/Mouse/gencode.vM19.long_noncoding_RNAs.gtf"))%>% 
+  dplyr::select(gene_type) %>% 
+  count(gene_type)
+
+pri_mouse <- as.data.frame(import("data/Gtf_Annotation/Mouse/gencode.vM19.primary_assembly.annotation.gtf"))%>% 
+  dplyr::select(gene_type) %>% 
+  count(gene_type)
+
+chr_mouse <- as.data.frame(import("data/Gtf_Annotation/Mouse/gencode.vM19.annotation.gtf"))%>% 
+  dplyr::select(gene_type) %>% 
+  count(gene_type)
+
+
+## combine dataframes to one table
+table_mouse <- full_join(nlc_mouse, pri_mouse, by = 'gene_type', all=TRUE) %>%
+  full_join(., chr_mouse, by='gene_type', all=TRUE)
+
+names(table_mouse) <- c("Gene_Type", "gtf_nlc", "gtf_pri", "gtf_chr")
+
+table_mouse %>% 
+  datatable()
+
+```
 
 ## Quality Filters
 ```{r bdQuality, layout="l-page"}
@@ -170,8 +226,6 @@ readMetricsSummary(fname1822) %>%
   bind_rows(readMetricsSummary("data/1822_Metrics_Summary_mouse.csv") %>% mutate(genome = "mouse")) %>%
   filter(!is.na(value)) -> metrics1822
          
-metrics1822 %>%
-    datatable()
 
 metrics1822_reshape <- reshape(metrics1822,
                             idvar = "quality",
@@ -246,13 +300,25 @@ The number of unique cell labels should be similar to the number of cells captur
 - Experiencing low level contamination during oligonucleotide and bead synthesis
 - Generating errors during the PCR amplification steps of the workflow
 
-In our case, the analysis of cell labels indicates two cell populations with very different expression levels:
-The following next plots show the samples which were aligned to the human genome.
+In our case, the analysis of cell labels indicates two cell populations with very different expression levels.
 
-![](plots/1820_Cell_Label_Second_Derivative_Curve_Human.png)
+```{r fig.cap= "Result of the second derivative analysis of the 1820 sample aligned to the human genome."}
+cellLabel1820 <- readImage("plots/1820_Cell_Label_Second_Derivative_Curve_Human.png")
+display(cellLabel1820)
+```
 
-![](plots/1822_Cell_Label_Second_Derivative_Curve.png)
-The next two plots show the samples which were aligned to the mouse genome.
+```{r fig.cap= "Result of the second derivative analysis of the 1822 sample aligned to the human genome."}
+cellLabel1822 <- readImage("plots/1822_Cell_Label_Second_Derivative_Curve.png")
+display(cellLabel1822)
+```
 
-![](plots/1820_Cell_Label_Second_Derivative_Curve_mouse.png)
-![](plots/1822_Cell_Label_Second_Derivative_Curve_mouse.png)
+```{r fig.cap= "Result of the second derivative analysis of the 1820 sample aligned to the mouse genome."}
+cellLabel_mouse <- readImage("plots/1820_Cell_Label_Second_Derivative_Curve_mouse.png")
+display(cellLabel_mouse)
+```
+
+```{r fig.cap= "Result of the second derivative analysis of the 1822 sample aligned to the mouse genome."}
+cellLabel1822_mouse<- readImage("plots/1822_Cell_Label_Second_Derivative_Curve_mouse.png")
+display(cellLabel1822_mouse)
+```
+
