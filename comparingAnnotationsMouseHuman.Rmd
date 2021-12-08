@@ -38,16 +38,20 @@ source("helperFunctions.R")
 
 - [x] Translate German text into English
 - [x] Create Seurat Objects all samples with human annotation vs mouse annotation (4 Seurat objects)
-- [x] Show overview table of annotation-structure (gene types and numbers) for BD Rhapsody vs CHR (here also mouse vs human) -> section "Annotation and Mapping"
+- [ ] Show overview table of annotation-structure (gene types and numbers) for BD Rhapsody vs CHR (here also mouse vs human) -> section "Annotation and Mapping"
 - [x] Create figure of position-based GC content for both samples -> we would like to see whether the AT-content is enriched at the ends of the reads
-- [ ] Create comparative table of the 4 annotations ->  wide format with columns for each sample and each annotation (Section Quality Filters)
-- [ ] Prepare overview figure for molecular index statistics -> facet_grid (annotation ~ sample)
+- [x] Create comparative table of the 4 annotations ->  wide format with columns for each sample and each annotation (Section Quality Filters)
+- [x] Prepare overview figure for molecular index statistics -> facet_grid (annotation ~ sample)
 - [x] Prepare overview figure for Cell label filtering with similar structure of molecular index statistics
 - [ ] Add legends to all figures and tables -> use chunk-options
 - [ ] Read the paper from Aznaourova et al (https://doi.org/10.1101/2021.11.05.467458) and summarize relevant method points for the analysis of lncRNA using BD Rhapsody
 
 ```{r load-data, eval=FALSE}
-load("data/unfilteredSeurat_full.Rdata")
+load("data/unfilteredSeurat_1820_human.Rdata")
+load("data/unfilteredSeurat_1822_human.Rdata")
+load("data/unfilteredSeurat_1820_mouse.Rdata")
+load("data/unfilteredSeurat_1822_mouse.Rdata")
+
 lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
   bind_rows(.id = "experiment") %>% 
   mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
@@ -143,24 +147,39 @@ The third annotation file was used because we did-not found any mtRNA in the lon
 CHR - It contains the comprehensive gene annotation on the reference chromosomes only
     - This is the main annotation file for most users
 The tables below show the three annotations files for human and mouse. It contains the different gene types and their number in each of the files. 
-```{r gtf_tables, max.print: 1}
-table_human <- read_csv("data/Gtf_Annotation/gtf_table.csv")
-table_mouse <- read_csv("data/Gtf_Annotation/gtf_table_mouse.csv")
-dt_human <- datatable(table_human, extensions = "Scroller", width = 1000, options= list(scrolly = 200, scroller = T, scrollX = 200, pageLength = 1))
-dt_mouse <- datatable(table_mouse, extensions = "Scroller", width = 1000, options= list(scrolly = 200, scroller = T, scrollX = 200, pageLength = 1))
-dt_human
-```
 
 ## Quality Filters
 ```{r bdQuality, layout="l-page"}
 fname <- "data/1820_Metrics_Summary.csv"
 readMetricsSummary(fname) %>% 
   mutate(genome = "human") %>% 
-  bind_rows(readMetricsSummary("data/mouse_run/_1_1820_Metrics_Summary.csv") %>% mutate(genome = "mouse")) %>% 
+  bind_rows(readMetricsSummary("data/1820_Metrics_Summary_mouse.csv") %>% mutate(genome = "mouse")) %>% 
   filter(!is.na(value)) -> metrics
 
-metrics %>% 
+metrics_reshape <- reshape(metrics,
+                           idvar = "quality",
+                           timevar = "genome",
+                           direction = "wide")
+
+metrics_reshape %>% 
   datatable()
+
+fname1822 <- "data/1822_Metrics_Summary.csv"
+readMetricsSummary(fname1822) %>%
+  mutate(genome = "human") %>%
+  bind_rows(readMetricsSummary("data/1822_Metrics_Summary_mouse.csv") %>% mutate(genome = "mouse")) %>%
+  filter(!is.na(value)) -> metrics1822
+         
+metrics1822 %>%
+    datatable()
+
+metrics1822_reshape <- reshape(metrics1822,
+                            idvar = "quality",
+                            timevar = "genome",
+                            direction = "wide")
+
+metrics1822_reshape %>%
+    datatable()
 ```
 
 ## Molecular index statistics
@@ -171,7 +190,7 @@ PCR and sequencing errors within UMI sequence generate artifact molecules and co
 read_csv("data/1820_UMI_Adjusted_Stats.csv", comment = "##") %>% 
   mutate(genome = "human") %>% 
   bind_rows(
-    read_csv("data/mouse_run/_1_1820_UMI_Adjusted_Stats.csv", comment = "##") %>% 
+    read_csv("data/1820_UMI_Adjusted_Stats_mouse.csv", comment = "##") %>% 
       mutate(genome = "mouse")) -> umi.stats
 
 umi.stats %>% 
@@ -179,6 +198,24 @@ umi.stats %>%
   summarize(meanRSEC = mean(RSEC_Adjusted_Seq_Depth_without_Singletons))
 
 umi.stats %>% 
+  gghistogram(x = "RSEC_Adjusted_Seq_Depth_without_Singletons", fill = "Status", facet.by = "genome") + 
+  scale_x_log10() + 
+  geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
+```
+
+
+```{r umiStatistics_1822}
+read_csv("data/1822_UMI_Adjusted_Stats.csv", comment = "##") %>% 
+  mutate(genome = "human") %>% 
+  bind_rows(
+    read_csv("data/1822_UMI_Adjusted_Stats_mouse.csv", comment = "##") %>% 
+      mutate(genome = "mouse")) -> umi_1822.stats
+
+umi_1822.stats %>% 
+  group_by(genome) %>% 
+  summarize(meanRSEC = mean(RSEC_Adjusted_Seq_Depth_without_Singletons))
+
+umi_1822.stats %>% 
   gghistogram(x = "RSEC_Adjusted_Seq_Depth_without_Singletons", fill = "Status", facet.by = "genome") + 
   scale_x_log10() + 
   geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
