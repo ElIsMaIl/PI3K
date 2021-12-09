@@ -105,8 +105,11 @@ Before we can do a signaling analysis, we have to solve a couple of technical ta
     - Minor point: GC content is position dependent with a change at position 8-9 -> what is the reason for this?
     - Structure of libraries is polyA -> is this really edited out -> if not, there should be enrichment at the end
     
-```{r fig.cap= "GC Content plot from the 1820 & 1822 sample.", layout="l-page"}
+```{r fig.cap= "GC Content plot from the 1820 sample."}
 include_graphics("plots/fastqc_per_sequence_gc_content_plot_1820.png")
+```
+
+```{r fig.cap= "GC Content plot from the 1822 sample.", layout="1-page"}
 include_graphics("plots/fastqc_per_sequence_gc_content_plot_1822.png")
 ```
 
@@ -151,7 +154,7 @@ CHR - It contains the comprehensive gene annotation on the reference chromosomes
     - This is the main annotation file for most users
 The tables below show the three annotations files for human and mouse. It contains the different gene types and their number in each of the files. 
 
-```{r gtf_tables, layout="l-page"}
+```{r layout="l-page"}
 ## load data
 gtf_nlc <- as.data.frame(import("data/Gtf_Annotation/Human/gencode.v29.long_noncoding_RNAs.gtf"))%>% 
   dplyr::select(gene_type) %>% 
@@ -172,13 +175,13 @@ table_gtfs <- full_join(gtf_nlc, gtf_pri, by = 'gene_type', all=TRUE) %>%
 
 names(table_gtfs) <- c("Gene_Type", "gtf_nlc", "gtf_pri", "gtf_chr")
 
-table_gtfs %>%
-  datatable()
+knitr::kable(table_gtfs,
+             caption = "The table shows the three different human annotation files with the gene types they contain")
 
 ```
 
 
-```{r gtf_mouse, layout="l-page"}
+```{r layout="l-page"}
 ## load data
 nlc_mouse <- as.data.frame(import("data/Gtf_Annotation/Mouse/gencode.vM19.long_noncoding_RNAs.gtf"))%>% 
   dplyr::select(gene_type) %>% 
@@ -199,13 +202,14 @@ table_mouse <- full_join(nlc_mouse, pri_mouse, by = 'gene_type', all=TRUE) %>%
 
 names(table_mouse) <- c("Gene_Type", "gtf_nlc", "gtf_pri", "gtf_chr")
 
-table_mouse %>% 
-  datatable()
+knitr::kable(table_mouse,
+             caption = "The table shows the three different mouse annotation files with the gene types they contain")
 
 ```
 
 ## Quality Filters
-```{r bdQuality, layout="l-page"}
+
+```{r layout="l-page"}
 fname <- "data/1820_Metrics_Summary.csv"
 readMetricsSummary(fname) %>% 
   mutate(genome = "human") %>% 
@@ -217,9 +221,12 @@ metrics_reshape <- reshape(metrics,
                            timevar = "genome",
                            direction = "wide")
 
-metrics_reshape %>% 
-  datatable()
+knitr::kable(metrics_reshape,
+             caption = "This metrics summary table provides statistics on sequencing, molecules, cells and targets for the 1820 sample")
 
+```
+
+```{r}
 fname1822 <- "data/1822_Metrics_Summary.csv"
 readMetricsSummary(fname1822) %>%
   mutate(genome = "human") %>%
@@ -232,15 +239,16 @@ metrics1822_reshape <- reshape(metrics1822,
                             timevar = "genome",
                             direction = "wide")
 
-metrics1822_reshape %>%
-    datatable()
+knitr::kable(metrics1822_reshape,
+             caption = "This metrics summary table provides statistics on sequencing, molecules, cells and targets for the 1822 sample")
 ```
+
 
 ## Molecular index statistics
 
 PCR and sequencing errors within UMI sequence generate artifact molecules and contribute to over estimation of molecules. Molecular Index (MI) adjustment identify these artifacts and discard or re-assign them to their original index (from BD slides).
 
-```{r umiStatistics}
+```{r umiStatistics, fig.cap= "The figure shows the molecular index statistics for the 1820 sample"}
 read_csv("data/1820_UMI_Adjusted_Stats.csv", comment = "##") %>% 
   mutate(genome = "human") %>% 
   bind_rows(
@@ -257,8 +265,7 @@ umi.stats %>%
   geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
 ```
 
-
-```{r umiStatistics_1822}
+```{r umiStatistics_1822, fig.cap= "The figure shows the molecular index statistics for the 1822 sample"}
 read_csv("data/1822_UMI_Adjusted_Stats.csv", comment = "##") %>% 
   mutate(genome = "human") %>% 
   bind_rows(
@@ -303,22 +310,18 @@ The number of unique cell labels should be similar to the number of cells captur
 In our case, the analysis of cell labels indicates two cell populations with very different expression levels.
 
 ```{r fig.cap= "Result of the second derivative analysis of the 1820 sample aligned to the human genome."}
-cellLabel1820 <- readImage("plots/1820_Cell_Label_Second_Derivative_Curve_Human.png")
-display(cellLabel1820)
+include_graphics("plots/1820_Cell_Label_Second_Derivative_Curve_Human.png")
 ```
 
 ```{r fig.cap= "Result of the second derivative analysis of the 1822 sample aligned to the human genome."}
-cellLabel1822 <- readImage("plots/1822_Cell_Label_Second_Derivative_Curve.png")
-display(cellLabel1822)
+include_graphics("plots/1822_Cell_Label_Second_Derivative_Curve.png")
 ```
 
 ```{r fig.cap= "Result of the second derivative analysis of the 1820 sample aligned to the mouse genome."}
-cellLabel_mouse <- readImage("plots/1820_Cell_Label_Second_Derivative_Curve_mouse.png")
-display(cellLabel_mouse)
+include_graphics("plots/1820_Cell_Label_Second_Derivative_Curve_mouse.png")
 ```
 
 ```{r fig.cap= "Result of the second derivative analysis of the 1822 sample aligned to the mouse genome."}
-cellLabel1822_mouse<- readImage("plots/1822_Cell_Label_Second_Derivative_Curve_mouse.png")
-display(cellLabel1822_mouse)
+include_graphics("plots/1822_Cell_Label_Second_Derivative_Curve_mouse.png")
 ```
 
