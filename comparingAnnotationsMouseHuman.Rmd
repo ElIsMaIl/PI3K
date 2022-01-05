@@ -47,6 +47,12 @@ source("helperFunctions.R")
 - [x] Prepare overview figure for Cell label filtering with similar structure of molecular index statistics
 - [x] Add legends to all figures and tables -> use chunk-options
 - [ ] Read the paper from Aznaourova et al (https://doi.org/10.1101/2021.11.05.467458) and summarize relevant method points for the analysis of lncRNA using BD Rhapsody
+- [ ] Adjust section on Normalization for the comparison between mouse and human -> update when finished
+- [ ] Upload data to irods/SODAR (fastq/bam/multiqc)
+- [ ] Run pipeline for 7270
+- [ ] Run pipeline for 7271
+- [ ] Run pipeline for 7272
+- [ ] Run pipeline for 7273
 
 ```{r load-data, eval=FALSE}
 load("data/unfilteredSeurat_1820_human.Rdata")
@@ -325,3 +331,109 @@ include_graphics("plots/1820_Cell_Label_Second_Derivative_Curve_mouse.png")
 include_graphics("plots/1822_Cell_Label_Second_Derivative_Curve_mouse.png")
 ```
 
+# Outline of analysis steps
+
+We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point for the analysis of human single cells and refer to [@Luecken2019] as a guideline for the analysis of the count matrices.
+
+1. quality control
+
+    1. number of counts per cell
+    1. number of genes per cell
+    1. number of mitochondrial genes per cell
+
+1. normalization
+
+    1. on cellular counts
+    1. on gene level
+
+1. data correction (batch / cell cycle effect ...) and integration
+
+    1. regressing out biological effects
+    1. regressing out technical effects
+    1. integration of multiple samples
+
+1. expression recovery (denoising or imputation)
+1. feature selection and dimensionality reduction
+1. biological downstream analysis
+
+    1. clustering
+    1. pathway analysis
+    1. to be discussed ...
+
+-> back to [top][Data overview]
+
+# Single cell analysis
+## quality control
+
+I started with the unfiltered data sets provided by 7bridges. When creating the Seurat-Object (analysis-tool for sc-RNAsequencing), I only keep cells with at least 200 genes covered which drastically reduced the number of cells. The overall number of genes and the number of cells are shown in the table below.
+
+```{r load-libraries}
+library(Matrix)
+library(Matrix.utils)
+library(tidyverse)
+library(Seurat)
+library(janitor)
+library(ggsci)
+library(cowplot)
+library(DT)
+```
+
+```{r load-data}
+load("data/unfilteredSeurat.Rdata")
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+mypal <- pal_jama()(2)
+```
+
+```{r set-thresholds}
+nFeature.lower <- 200
+nFeature.upper <- 1500
+mt.upper <- 5
+```
+
+The next plots show the quality measures: number of unique genes, total molecules and the percentage of mitochondrial genes as violin plots. A high number of genes indicate possible doublets, whereas a high percentage of mitochondrial genes indicate dying cells.
+
+```{r plot-qc, fig.keep="all"}
+p1 <- VlnPlot(list_seurat[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal[1]) 
+p1 <- lapply(p1, function(x){
+  x + xlab(Project(list_seurat[[1]])) +
+    theme(axis.text.x = element_blank(),
+          legend.position = "none")
+  })
+p1[[1]] <- p1[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p1[[3]] <- p1[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p1, nrow = 1)
+p2 <- VlnPlot(list_seurat[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal[2]) 
+p2 <- lapply(p2, function(x){
+  x + xlab(Project(list_seurat[[2]])) +
+    theme(axis.text.x = element_blank(), 
+          legend.position = "none")
+  })
+p2[[1]] <- p2[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p2[[3]] <- p2[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p2, nrow = 1)
+```
+
+```{r plot-qc-scatter}
+plot1 <- FeatureScatter(list_seurat[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal[1])
+plot1 <- plot1 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper) + 
+  scale_x_log10() + 
+  theme(legend.position = "none")
+plot2 <- FeatureScatter(list_seurat[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal[2])
+plot2 <- plot2 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper)+ 
+  scale_x_log10() +
+  theme(legend.position = "none")
+plot1 + plot2 
+```
+
+If we use the suggested thresholds for filtering cells, we are loosing roughly 2000 to 4000 cells.
