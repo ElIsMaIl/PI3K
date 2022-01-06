@@ -54,20 +54,50 @@ source("helperFunctions.R")
 - [ ] Run pipeline for 7272
 - [ ] Run pipeline for 7273
 
-```{r load-data, eval=FALSE}
+```{r load-data_1820human, eval=FALSE}
 load("data/unfilteredSeurat_1820_human.Rdata")
+
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  mutate(filter = "none") %>% datatable()
+
+mypal_1820human <- pal_jama()(2)
+```
+
+```{r load-data_1822human}
 load("data/unfilteredSeurat_1822_human.Rdata")
+
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  mutate(filter = "none") %>% datatable()
+
+mypal_1822human <- pal_jama()(2)
+```
+
+```{r load-data_1820mouse}
 load("data/unfilteredSeurat_1820_mouse.Rdata")
+
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  mutate(filter = "none") %>% datatable()
+
+mypal_1820mouse <- pal_jama()(2)
+```
+
+```{r load-data_1822mouse}
 load("data/unfilteredSeurat_1822_mouse.Rdata")
 
 lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
   bind_rows(.id = "experiment") %>% 
   mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  mutate(filter = "none") -> countCells
+  mutate(filter = "none") %>% datatable()
 
-mypal <- pal_jama()(2)
-
+mypal_1822mouse <- pal_jama()(2)
 ```
+
 
 # Data overview {#top}
 
@@ -367,25 +397,60 @@ We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point
 
 I started with the unfiltered data sets provided by 7bridges. When creating the Seurat-Object (analysis-tool for sc-RNAsequencing), I only keep cells with at least 200 genes covered which drastically reduced the number of cells. The overall number of genes and the number of cells are shown in the table below.
 
-```{r load-libraries}
-library(Matrix)
-library(Matrix.utils)
-library(tidyverse)
-library(Seurat)
-library(janitor)
-library(ggsci)
-library(cowplot)
-library(DT)
-```
-
-```{r load-data}
-load("data/unfilteredSeurat.Rdata")
+```{r load-data_1820_human}
+load("data/unfilteredSeurat_1820_human.Rdata")
 lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
   bind_rows(.id = "experiment") %>% 
   mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
   datatable()  
-mypal <- pal_jama()(2)
+mypal_1820h <- pal_jama()(2)
 ```
+
+```{r load-data_1822_human}
+load("data/unfilteredSeurat_1822_human.Rdata")
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+mypal_1822h <- pal_jama()(2)
+```
+
+```{r load-data_1820_mouse}
+load("data/unfilteredSeurat_1820_mouse.Rdata")
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+mypal_1820h <- pal_jama()(2)
+```
+
+```{r load-data_1822_mouse}
+load("data/unfilteredSeurat_1822_mouse.Rdata")
+lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+mypal_1822m <- pal_jama()(2)
+```
+
+```{r load-data_1820}
+load("data/unfilteredSeurat_1820.Rdata")
+lapply(list_seurat_1820, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+mypal_1820 <- pal_jama()(2)
+```
+
+```{r load-data_1822}
+load("data/unfilteredSeurat_1822.Rdata")
+lapply(list_seurat_1822, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  datatable()  
+mypal_1822 <- pal_jama()(2)
+```
+
 
 ```{r set-thresholds}
 nFeature.lower <- 200
@@ -395,21 +460,21 @@ mt.upper <- 5
 
 The next plots show the quality measures: number of unique genes, total molecules and the percentage of mitochondrial genes as violin plots. A high number of genes indicate possible doublets, whereas a high percentage of mitochondrial genes indicate dying cells.
 
-```{r plot-qc, fig.keep="all"}
-p1 <- VlnPlot(list_seurat[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
-        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal[1]) 
+```{r plot-qc_1820, fig.keep="all"}
+p1 <- VlnPlot(list_seurat_1820[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1820[1]) 
 p1 <- lapply(p1, function(x){
-  x + xlab(Project(list_seurat[[1]])) +
+  x + xlab(Project(list_seurat_1820[[1]])) +
     theme(axis.text.x = element_blank(),
           legend.position = "none")
   })
 p1[[1]] <- p1[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
 p1[[3]] <- p1[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p1, nrow = 1)
-p2 <- VlnPlot(list_seurat[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
-        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal[2]) 
+p2 <- VlnPlot(list_seurat_1820[[2]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1820[2]) 
 p2 <- lapply(p2, function(x){
-  x + xlab(Project(list_seurat[[2]])) +
+  x + xlab(Project(list_seurat_1820[[2]])) +
     theme(axis.text.x = element_blank(), 
           legend.position = "none")
   })
@@ -418,22 +483,64 @@ p2[[3]] <- p2[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p2, nrow = 1)
 ```
 
-```{r plot-qc-scatter}
-plot1 <- FeatureScatter(list_seurat[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
-                        cols = mypal[1])
+```{r plot-qc_1822, fig.keep="all"}
+p3 <- VlnPlot(list_seurat_1822[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1822[1]) 
+p3 <- lapply(p3, function(x){
+  x + xlab(Project(list_seurat_1822[[1]])) +
+    theme(axis.text.x = element_blank(),
+          legend.position = "none")
+  })
+p3[[1]] <- p3[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p3[[3]] <- p3[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p3, nrow = 1)
+p4 <- VlnPlot(list_seurat_1822[[2]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1822[2]) 
+p4 <- lapply(p4, function(x){
+  x + xlab(Project(list_seurat_1822[[2]])) +
+    theme(axis.text.x = element_blank(), 
+          legend.position = "none")
+  })
+p4[[1]] <- p4[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p4[[3]] <- p4[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p4, nrow = 1)
+```
+
+
+```{r plot-qc-scatter_1820}
+plot1 <- FeatureScatter(list_seurat_1820[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_1820[1])
 plot1 <- plot1 +
   geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
   geom_hline(yintercept = mt.upper) + 
   scale_x_log10() + 
   theme(legend.position = "none")
-plot2 <- FeatureScatter(list_seurat[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
-                        cols = mypal[2])
+plot2 <- FeatureScatter(list_seurat_1820[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_1820[2])
 plot2 <- plot2 +
   geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
   geom_hline(yintercept = mt.upper)+ 
   scale_x_log10() +
   theme(legend.position = "none")
 plot1 + plot2 
+```
+
+```{r plot-qc-scatter_1822}
+plot3 <- FeatureScatter(list_seurat_1822[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_1822[1])
+plot3 <- plot3 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper) + 
+  scale_x_log10() + 
+  theme(legend.position = "none")
+plot4 <- FeatureScatter(list_seurat_1822[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_1822[2])
+plot4 <- plot4 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper)+ 
+  scale_x_log10() +
+  theme(legend.position = "none")
+plot3 + plot4 
 ```
 
 If we use the suggested thresholds for filtering cells, we are loosing roughly 2000 to 4000 cells.
