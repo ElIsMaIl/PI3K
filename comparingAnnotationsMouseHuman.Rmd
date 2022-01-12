@@ -54,51 +54,6 @@ source("helperFunctions.R")
 - [ ] Run pipeline for 7272
 - [ ] Run pipeline for 7273
 
-```{r load-data_1820human, eval=FALSE}
-load("data/unfilteredSeurat_1820_human.Rdata")
-
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  mutate(filter = "none") %>% datatable()
-
-mypal_1820human <- pal_jama()(2)
-```
-
-```{r load-data_1822human}
-load("data/unfilteredSeurat_1822_human.Rdata")
-
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  mutate(filter = "none") %>% datatable()
-
-mypal_1822human <- pal_jama()(2)
-```
-
-```{r load-data_1820mouse}
-load("data/unfilteredSeurat_1820_mouse.Rdata")
-
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  mutate(filter = "none") %>% datatable()
-
-mypal_1820mouse <- pal_jama()(2)
-```
-
-```{r load-data_1822mouse}
-load("data/unfilteredSeurat_1822_mouse.Rdata")
-
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  mutate(filter = "none") %>% datatable()
-
-mypal_1822mouse <- pal_jama()(2)
-```
-
-
 # Data overview {#top}
 
 1. HNSCC-PDX (untreated, 1820): 
@@ -397,60 +352,37 @@ We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point
 
 I started with the unfiltered data sets provided by 7bridges. When creating the Seurat-Object (analysis-tool for sc-RNAsequencing), I only keep cells with at least 200 genes covered which drastically reduced the number of cells. The overall number of genes and the number of cells are shown in the table below.
 
-```{r load-data_1820_human}
-load("data/unfilteredSeurat_1820_human.Rdata")
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
-mypal_1820h <- pal_jama()(2)
-```
-
-```{r load-data_1822_human}
-load("data/unfilteredSeurat_1822_human.Rdata")
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
-mypal_1822h <- pal_jama()(2)
-```
-
-```{r load-data_1820_mouse}
-load("data/unfilteredSeurat_1820_mouse.Rdata")
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
-mypal_1820h <- pal_jama()(2)
-```
-
-```{r load-data_1822_mouse}
-load("data/unfilteredSeurat_1822_mouse.Rdata")
-lapply(list_seurat, function(x) dim(x) %>% enframe(name = "dim")) %>% 
-  bind_rows(.id = "experiment") %>% 
-  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
-mypal_1822m <- pal_jama()(2)
-```
-
-```{r load-data_1820}
+```{r}
 load("data/unfilteredSeurat_1820.Rdata")
+
 lapply(list_seurat_1820, function(x) dim(x) %>% enframe(name = "dim")) %>% 
   bind_rows(.id = "experiment") %>% 
   mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
+  as.data.frame() -> table_1820
+
+rownames(table_1820) <- c("Human"," ","Mouse","  ")
+
+knitr::kable(table_1820,
+             caption = "This table shows the number of cells and genes from sample 1820. The first two rows show the numbers for the sample aligned to the human genome while the third and fourth row show the numbers for the sample aligned to the mouse genome.")
+
 mypal_1820 <- pal_jama()(2)
 ```
 
-```{r load-data_1822}
+```{r}
 load("data/unfilteredSeurat_1822.Rdata")
+
 lapply(list_seurat_1822, function(x) dim(x) %>% enframe(name = "dim")) %>% 
   bind_rows(.id = "experiment") %>% 
   mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
-  datatable()  
+  as.data.frame() -> table_1822
+
+rownames(table_1822) <- c("Human"," ","Mouse","  ")
+
+knitr::kable(table_1822,
+             caption = "This table shows the number of cells and genes from sample 1822. The first two rows show the numbers for the sample aligned to the human genome while the third and fourth row show the numbers for the sample aligned to the mouse genome.")
+
 mypal_1822 <- pal_jama()(2)
 ```
-
 
 ```{r set-thresholds}
 nFeature.lower <- 200
@@ -460,7 +392,10 @@ mt.upper <- 5
 
 The next plots show the quality measures: number of unique genes, total molecules and the percentage of mitochondrial genes as violin plots. A high number of genes indicate possible doublets, whereas a high percentage of mitochondrial genes indicate dying cells.
 
-```{r plot-qc_1820, fig.keep="all"}
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These violin plots are created from 1820. The upper figures show the quality measures for 1820 which was aligned to the human genome. The second plot shows the quality measures for the same sample which was aligned to the mouse genome."
+
 p1 <- VlnPlot(list_seurat_1820[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
         ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1820[1]) 
 p1 <- lapply(p1, function(x){
@@ -483,7 +418,10 @@ p2[[3]] <- p2[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p2, nrow = 1)
 ```
 
-```{r plot-qc_1822, fig.keep="all"}
+```{r}
+#| fig.keep="all",
+#| fig.cap = "These violin plots are created from 1822. The upper figures show the quality measures for 1822 which was aligned to the human genome. The second plot shows the quality measures for the same sample which was aligned to the mouse genome."
+
 p3 <- VlnPlot(list_seurat_1822[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
         ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1822[1]) 
 p3 <- lapply(p3, function(x){
@@ -506,8 +444,9 @@ p4[[3]] <- p4[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p4, nrow = 1)
 ```
 
-
-```{r plot-qc-scatter_1820}
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These scatter plots show the relation between the human and mouse data points for sample 1820 in relation to their percentage of mitochondrial genes."
 plot1 <- FeatureScatter(list_seurat_1820[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
                         cols = mypal_1820[1])
 plot1 <- plot1 +
@@ -525,7 +464,9 @@ plot2 <- plot2 +
 plot1 + plot2 
 ```
 
-```{r plot-qc-scatter_1822}
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "The scatter plots show the relation between the human and mouse data points for sample 1822 in relation to their percentage of mitochondrial genes."
 plot3 <- FeatureScatter(list_seurat_1822[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
                         cols = mypal_1822[1])
 plot3 <- plot3 +
