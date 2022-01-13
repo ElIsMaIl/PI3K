@@ -7,6 +7,7 @@ fname <- list.files("data", "Unfiltered.st.gz", full.names = TRUE)
 list.files("data", "Unfiltered.st.gz", full.names = FALSE) %>% 
   str_split(pattern = "_", simplify = T) %>% .[,1] -> names.exp
 
+# ToDo: make sure the pattern for mt works for human/mouse
 list_seurat <- lapply(1:length(fname), function(id){
   df_expression <- read.table(fname[id], sep= "\t", header=TRUE)
   df_expression <- df_expression[,-(3:4),drop=FALSE]

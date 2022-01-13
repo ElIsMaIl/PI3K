@@ -47,7 +47,15 @@ source("helperFunctions.R")
 - [x] Prepare overview figure for Cell label filtering with similar structure of molecular index statistics
 - [x] Add legends to all figures and tables -> use chunk-options
 - [ ] Read the paper from Aznaourova et al (https://doi.org/10.1101/2021.11.05.467458) and summarize relevant method points for the analysis of lncRNA using BD Rhapsody
-- [ ] Adjust section on Normalization for the comparison between mouse and human -> update when finished
+- [x] Adjust section on Normalization for the comparison between mouse and human
+- [ ] calculation of mt-expressed RNA in mouse -> update when finished
+- [ ] annotation of FeatureScatter plot (What does 0.14 / 0.18 mean)?
+- [ ] overlap between cells, which have mouse and human genes vs. mouse genes -> venn-diagram / histogram
+- [ ] name-mapping between mouse / human
+- [ ] how many genes are the same in mouse human?
+
+
+This is currently on hold:
 - [ ] Upload data to irods/SODAR (fastq/bam/multiqc)
 - [ ] Run pipeline for 7270
 - [ ] Run pipeline for 7271
