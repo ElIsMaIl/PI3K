@@ -48,8 +48,8 @@ source("helperFunctions.R")
 - [x] Add legends to all figures and tables -> use chunk-options
 - [ ] Read the paper from Aznaourova et al (https://doi.org/10.1101/2021.11.05.467458) and summarize relevant method points for the analysis of lncRNA using BD Rhapsody
 - [x] Adjust section on Normalization for the comparison between mouse and human
-- [ ] calculation of mt-expressed RNA in mouse -> update when finished
-- [ ] annotation of FeatureScatter plot (What does 0.14 / 0.18 mean)?
+- [x] calculation of mt-expressed RNA in mouse -> update when finished
+- [x] annotation of FeatureScatter plot (What does 0.14 / 0.18 mean)?
 - [ ] overlap between cells, which have mouse and human genes vs. mouse genes -> venn-diagram / histogram
 - [ ] name-mapping between mouse / human
 - [ ] how many genes are the same in mouse human?
@@ -362,6 +362,7 @@ I started with the unfiltered data sets provided by 7bridges. When creating the 
 
 ```{r}
 load("data/unfilteredSeurat_1820.Rdata")
+load("data/unfilteredSeurat_1820_mouse.Rdata")
 
 lapply(list_seurat_1820, function(x) dim(x) %>% enframe(name = "dim")) %>% 
   bind_rows(.id = "experiment") %>% 
@@ -378,6 +379,7 @@ mypal_1820 <- pal_jama()(2)
 
 ```{r}
 load("data/unfilteredSeurat_1822.Rdata")
+load("data/unfilteredSeurat_1822_mouse.Rdata")
 
 lapply(list_seurat_1822, function(x) dim(x) %>% enframe(name = "dim")) %>% 
   bind_rows(.id = "experiment") %>% 
@@ -414,10 +416,10 @@ p1 <- lapply(p1, function(x){
 p1[[1]] <- p1[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
 p1[[3]] <- p1[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p1, nrow = 1)
-p2 <- VlnPlot(list_seurat_1820[[2]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+p2 <- VlnPlot(list_seurat_1820m[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
         ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1820[2]) 
 p2 <- lapply(p2, function(x){
-  x + xlab(Project(list_seurat_1820[[2]])) +
+  x + xlab(Project(list_seurat_1820m[[1]])) +
     theme(axis.text.x = element_blank(), 
           legend.position = "none")
   })
@@ -440,10 +442,10 @@ p3 <- lapply(p3, function(x){
 p3[[1]] <- p3[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
 p3[[3]] <- p3[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p3, nrow = 1)
-p4 <- VlnPlot(list_seurat_1822[[2]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+p4 <- VlnPlot(list_seurat_1822m[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
         ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_1822[2]) 
 p4 <- lapply(p4, function(x){
-  x + xlab(Project(list_seurat_1822[[2]])) +
+  x + xlab(Project(list_seurat_1822m[[1]])) +
     theme(axis.text.x = element_blank(), 
           legend.position = "none")
   })
@@ -454,7 +456,8 @@ plot_grid(plotlist = p4, nrow = 1)
 
 ```{r}
 #| fig.keep = "all",
-#| fig.cap = "These scatter plots show the relation between the human and mouse data points for sample 1820 in relation to their percentage of mitochondrial genes."
+#| fig.cap = "These scatter plots show the relation between the human and mouse data points for sample 1820 in relation to their percentage of mitochondrial genes. The first scatter plots shows the correlation with a correlation coefficient of 0.18 for 1820 which was aligned to the human genome. 1820 which was aligned to the mouse genome is shown in the second plot. Here we have an correlation coefficient of 0.03"
+
 plot1 <- FeatureScatter(list_seurat_1820[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
                         cols = mypal_1820[1])
 plot1 <- plot1 +
@@ -462,7 +465,7 @@ plot1 <- plot1 +
   geom_hline(yintercept = mt.upper) + 
   scale_x_log10() + 
   theme(legend.position = "none")
-plot2 <- FeatureScatter(list_seurat_1820[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+plot2 <- FeatureScatter(list_seurat_1820m[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
                         cols = mypal_1820[2])
 plot2 <- plot2 +
   geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
@@ -474,7 +477,7 @@ plot1 + plot2
 
 ```{r}
 #| fig.keep = "all",
-#| fig.cap = "The scatter plots show the relation between the human and mouse data points for sample 1822 in relation to their percentage of mitochondrial genes."
+#| fig.cap = "The scatter plots show the relation between the human and mouse data points for sample 1822 in relation to their percentage of mitochondrial genes. The first scatter plots shows the correlation with a correlation coefficient of 0.14 for 1822 which was aligned to the human genome. 1822 which was aligned to the mouse genome is shown in the second plot. Here we have an correlation coefficient of -0.14"
 plot3 <- FeatureScatter(list_seurat_1822[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
                         cols = mypal_1822[1])
 plot3 <- plot3 +
@@ -482,7 +485,7 @@ plot3 <- plot3 +
   geom_hline(yintercept = mt.upper) + 
   scale_x_log10() + 
   theme(legend.position = "none")
-plot4 <- FeatureScatter(list_seurat_1822[[2]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+plot4 <- FeatureScatter(list_seurat_1822m[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
                         cols = mypal_1822[2])
 plot4 <- plot4 +
   geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
