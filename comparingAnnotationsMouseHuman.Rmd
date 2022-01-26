@@ -57,10 +57,10 @@ source("helperFunctions.R")
 
 This is currently on hold:
 - [ ] Upload data to irods/SODAR (fastq/bam/multiqc)
-- [ ] Run pipeline for 7270
-- [ ] Run pipeline for 7271
-- [ ] Run pipeline for 7272
-- [ ] Run pipeline for 7273
+- [x] Run pipeline for 7270
+- [x] Run pipeline for 7271 
+- [ ] Run pipeline for 7272 [x] Human [läuft] Maus
+- [ ] Run pipeline for 7273 [läuft]  Human [] Maus
 
 # Data overview {#top}
 
@@ -83,7 +83,7 @@ Cells were sequenced with the BD Rhapsody System. This is a cartridge-based syst
 
 - bbsplit  (using mouse and human) 
   - so far no successful run possible
-- demultiplexing and alignment to human reference genome GrCH38 was done using 7bridges
+- demultiplexing and alignment to human and mouse reference genome (GrCH38 and GRCm38) was done using 7bridges
 
 -> back to [top][Data overview]
 

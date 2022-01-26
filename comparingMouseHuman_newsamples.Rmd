@@ -1,0 +1,424 @@
+---
+title: "Single cell sequencing of PDX models"
+description: |
+  Overview of data analysis for the new samples.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+options(scipen = 999)
+```
+
+```{r load-libraries}
+library(Matrix)
+library(Matrix.utils)
+library(tidyverse)
+library(rtracklayer)
+library(Seurat)
+library(knitr)
+library(janitor)
+library(ggsci)
+library(ggpubr)
+library(cowplot)
+library(DT)
+library(biomaRt)
+source("helperFunctions.R")
+```
+
+# Data overview {#top}
+
+1. HNSCC-PDX (treated with alpelisib + copanlisib, 7270): 
+    - The probe was separated after dissociation. Both parts were marked with a sample tag. Both probes were loaded on the cartridge and translated into cDNA. The libraries were prepared for the sample tag as well as the target cDNA.
+
+2. HNSCC-PDX (untreated, 7271): 
+    - Right after dissociation the probe was loaded on the cartridge. This probe has no sample tag.
+
+3. HNSCC-PDX (untreated, 7272):
+    - Right after dissociation the probe was loaded on the cartridge. Thi sprobe has no sample tag.
+  
+4. HNSCC-PDX (untreated + treated with alpelisib + copanlisib, 7273):
+    - The probe was separated after dissociation. All three parts were marked with a sample tag. All probes were loaded on the catridge and translated into cDNA. The libraries were prepared for the sample tag as well as the target cDNA.
+
+# Material and Methods
+
+All probes have a spike-in with PhiX before the sequencing at the BIH Core Facility Genomics.
+
+## Sequencing
+
+Cells were sequenced with the BD Rhapsody System. This is a cartridge-based system, where single cells are loaded and lysed. During lysis RNA is coupled to beads and is subsequently reverse-transcribed into cDNA. The system allows to multiplex different samples, where each sample is marked with a specific sample tag. With this system it is also possible to analyse protein expression on a single cell level using antibody based sequencing.
+
+## Alignment and Demultiplexing
+
+- demultiplexing and alignment to human and mouse reference genome (GrCH38 and GRCm38) was done using 7bridges
+
+-> back to [top][Data overview]
+
+# Question and Tasks
+The major question in this project is how does Alpelisib-treatment and Copanlisib-treatment change signaling in HNSCC.
+
+1. How many % of the samples are mouse specific?
+Independent alignment on mouse or human suggests, using the comprehensive annotation file:
+  - sample 7270 has 38% human vs 77% mouse
+  - sample 7271 has 51% human vs 67% mouse
+  - sample 7272 has 47% human vs % mouse
+  - sample 7273 has   % human vs % mouse
+        
+2. GC content of the samples:
+
+```{r fig.cap= "GC Content plot from the 7270 sample."}
+include_graphics("plots/fastqc_per_sequence_gc_content_plot_7270.png")
+```
+
+```{r fig.cap= "GC Content plot from the 7271 sample."}
+include_graphics("plots/fastqc_per_sequence_gc_content_plot_7271.png")
+```
+
+```{r fig.cap= "GC Content plot from the 7272 sample."}
+include_graphics("plots/fastqc_per_sequence_gc_content_plot_7272.png")
+```
+
+```{r fig.cap= "GC Content plot from the 7273 sample."}
+include_graphics("plots/fastqc_per_sequence_gc_content_plot_7273.png")
+```
+
+# Analysis of pipeline results from 7bridges
+## Experimental design
+
+Changing the number of cells rather than the sequencing depth might be an option. See https://www.nature.com/articles/s41467-020-14482-y
+Changing cell number needs to be done before library preparation.
+
+## Quality Filters
+
+```{r layout="l-page"}
+fname <- "data/7270_Metrics_Summary.csv"
+readMetricsSummary(fname) %>% 
+  mutate(genome = "human") %>% 
+  bind_rows(readMetricsSummary("data/7270_Metrics_Summary_mouse.csv") %>% mutate(genome = "mouse")) %>% 
+  filter(!is.na(value)) -> metrics
+
+metrics_reshape <- reshape(metrics,
+                           idvar = "quality",
+                           timevar = "genome",
+                           direction = "wide")
+
+knitr::kable(metrics_reshape,
+             caption = "This metrics summary table provides statistics on sequencing, molecules, cells and targets for the 7270 sample")
+
+```
+
+```{r layout="l-page"}
+fname <- "data/7271_Metrics_Summary.csv"
+readMetricsSummary(fname) %>% 
+  mutate(genome = "human") %>% 
+  bind_rows(readMetricsSummary("data/7271_Metrics_Summary_mouse.csv") %>% mutate(genome = "mouse")) %>% 
+  filter(!is.na(value)) -> metrics
+
+metrics_reshape <- reshape(metrics,
+                           idvar = "quality",
+                           timevar = "genome",
+                           direction = "wide")
+
+knitr::kable(metrics_reshape,
+             caption = "This metrics summary table provides statistics on sequencing, molecules, cells and targets for the 7271 sample")
+
+```
+
+```{r layout="l-page"}
+fname <- "data/7272_Metrics_Summary.csv"
+readMetricsSummary(fname) %>% 
+  mutate(genome = "human") %>% 
+  filter(!is.na(value)) -> metrics
+
+metrics_reshape <- reshape(metrics,
+                           idvar = "quality",
+                           timevar = "genome",
+                           direction = "wide")
+
+knitr::kable(metrics_reshape,
+             caption = "This metrics summary table provides statistics on sequencing, molecules, cells and targets for the 7272 sample which was aligned to the human genome")
+
+```
+## Molecular index statistics
+
+PCR and sequencing errors within UMI sequence generate artifact molecules and contribute to over estimation of molecules. Molecular Index (MI) adjustment identify these artifacts and discard or re-assign them to their original index (from BD slides).
+
+```{r umiStatistics_7270, fig.cap= "The figure shows the molecular index statistics for the 7270 sample"}
+read_csv("data/7270_UMI_Adjusted_Stats.csv", comment = "##") %>% 
+  mutate(genome = "human") %>% 
+  bind_rows(
+    read_csv("data/7270_UMI_Adjusted_Stats_mouse.csv", comment = "##") %>% 
+      mutate(genome = "mouse")) -> umi.stats
+
+umi.stats %>% 
+  group_by(genome) %>% 
+  summarize(meanRSEC = mean(RSEC_Adjusted_Seq_Depth_without_Singletons))
+
+umi.stats %>% 
+  gghistogram(x = "RSEC_Adjusted_Seq_Depth_without_Singletons", fill = "Status", facet.by = "genome") + 
+  scale_x_log10() + 
+  geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
+```
+
+```{r umiStatistics_7271, fig.cap= "The figure shows the molecular index statistics for the 7271 sample"}
+read_csv("data/7271_UMI_Adjusted_Stats.csv", comment = "##") %>% 
+  mutate(genome = "human") %>% 
+  bind_rows(
+    read_csv("data/7271_UMI_Adjusted_Stats_mouse.csv", comment = "##") %>% 
+      mutate(genome = "mouse")) -> umi.stats
+
+umi.stats %>% 
+  group_by(genome) %>% 
+  summarize(meanRSEC = mean(RSEC_Adjusted_Seq_Depth_without_Singletons))
+
+umi.stats %>% 
+  gghistogram(x = "RSEC_Adjusted_Seq_Depth_without_Singletons", fill = "Status", facet.by = "genome") + 
+  scale_x_log10() + 
+  geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
+```
+
+```{r umiStatistics_7272, fig.cap= "The figure shows the molecular index statistics for the 7271 sample"}
+read_csv("data/7272_UMI_Adjusted_Stats.csv", comment = "##") %>% 
+  mutate(genome = "human") -> umi.stats
+
+umi.stats %>% 
+  group_by(genome) %>% 
+  summarize(meanRSEC = mean(RSEC_Adjusted_Seq_Depth_without_Singletons))
+
+umi.stats %>% 
+  gghistogram(x = "RSEC_Adjusted_Seq_Depth_without_Singletons", fill = "Status", facet.by = "genome") + 
+  scale_x_log10() + 
+  geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
+```
+
+In general, this is a two-step process, including RSEC-adjustment and DBEC-adjustment
+
+1. Recursive Substitution Error Correction (RSEC)
+
+- Corrects for MI errors that are derived from sequencing base calls and PCR substitution errors
+- Based on edit distance of molecular indices
+- Similar method used by most other competitors/academic pipelines
+
+2. Distribution Based Error Correction (DBEC)
+
+- Adjusts for errors derived from library preparation steps or sequencing base deletions.
+- Based on distribution of sequencing coverage of molecular indices
+- Developed at BD Genomics
+
+Due to the low sequencing depth in our example (see threshold in Figure), DBEC-adjustment was not applied.
+
+
+## Cell label filtering
+
+The number of unique cell labels should be similar to the number of cells captured and amplified by the BD Rhapsody workflow. Causes of excess cell labels (from BD slides) :
+
+- Spill over of mRNA to the neighboring wells
+- Underloading beads in Rhapsody Cartridges: cells without beads and the RNA from the cells diffusing to adjacent wells
+- Experiencing low level contamination during oligonucleotide and bead synthesis
+- Generating errors during the PCR amplification steps of the workflow
+
+In our case, the analysis of cell labels indicates two cell populations with very different expression levels.
+
+```{r fig.cap= "Result of the second derivative analysis of the 7270 sample aligned to the human genome."}
+include_graphics("plots/7270_Cell_Label_Second_Derivative_Curve_human.png")
+```
+
+```{r fig.cap= "Result of the second derivative analysis of the 7270 sample aligned to the mouse genome."}
+include_graphics("plots/7270_Cell_Label_Second_Derivative_Curve_mouse.png")
+```
+
+```{r fig.cap= "Result of the second derivative analysis of the 7271 sample aligned to the human genome."}
+include_graphics("plots/7271_Cell_Label_Second_Derivative_Curve_human.png")
+```
+
+```{r fig.cap= "Result of the second derivative analysis of the 7271 sample aligned to the human genome."}
+include_graphics("plots/7271_Cell_Label_Second_Derivative_Curve_mouse.png")
+```
+
+```{r fig.cap= "Result of the second derivative analysis of the 7272 sample aligned to the human genome."}
+include_graphics("plots/7272_Cell_Label_Second_Derivative_Curve_human.png")
+```
+
+# Outline of analysis steps
+
+We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point for the analysis of human single cells and refer to [@Luecken2019] as a guideline for the analysis of the count matrices.
+
+1. quality control
+
+    1. number of counts per cell
+    1. number of genes per cell
+    1. number of mitochondrial genes per cell
+
+1. normalization
+
+    1. on cellular counts
+    1. on gene level
+
+1. data correction (batch / cell cycle effect ...) and integration
+
+    1. regressing out biological effects
+    1. regressing out technical effects
+    1. integration of multiple samples
+
+1. expression recovery (denoising or imputation)
+1. feature selection and dimensionality reduction
+1. biological downstream analysis
+
+    1. clustering
+    1. pathway analysis
+    1. to be discussed ...
+
+-> back to [top][Data overview]
+
+# Single cell analysis
+## quality control
+
+I started with the unfiltered data sets provided by 7bridges. When creating the Seurat-Object (analysis-tool for sc-RNAsequencing), I only keep cells with at least 200 genes covered which drastically reduced the number of cells. The overall number of genes and the number of cells are shown in the table below.
+
+```{r}
+load("data/unfilteredSeurat_7270.Rdata")
+load("data/unfilteredSeurat_7270_mouse.Rdata")
+
+lapply(list_seurat_7270, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  as.data.frame() -> table_7270
+
+rownames(table_7270) <- c("Human"," ","Mouse","  ")
+
+knitr::kable(table_7270,
+             caption = "This table shows the number of cells and genes from sample 7270. The first two rows show the numbers for the sample aligned to the human genome while the third and fourth row show the numbers for the sample aligned to the mouse genome.")
+
+mypal_7270 <- pal_jama()(2)
+```
+
+```{r}
+load("data/unfilteredSeurat_7271.Rdata")
+load("data/unfilteredSeurat_7271_mouse.Rdata")
+
+lapply(list_seurat_7271, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  as.data.frame() -> table_7271
+
+rownames(table_7271) <- c("Human"," ","Mouse","  ")
+
+knitr::kable(table_7271,
+             caption = "This table shows the number of cells and genes from sample 7271. The first two rows show the numbers for the sample aligned to the human genome while the third and fourth row show the numbers for the sample aligned to the mouse genome.")
+
+mypal_7271 <- pal_jama()(2)
+```
+
+```{r set-thresholds}
+nFeature.lower <- 200
+nFeature.upper <- 1500
+mt.upper <- 5
+```
+
+The next plots show the quality measures: number of unique genes, total molecules and the percentage of mitochondrial genes as violin plots. A high number of genes indicate possible doublets, whereas a high percentage of mitochondrial genes indicate dying cells.
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These violin plots are created from 7270. The upper figures show the quality measures for 7270 which was aligned to the human genome. The second plot shows the quality measures for the same sample which was aligned to the mouse genome."
+
+p1 <- VlnPlot(list_seurat_7270[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_7270[1]) 
+p1 <- lapply(p1, function(x){
+  x + xlab(Project(list_seurat_7270[[1]])) +
+    theme(axis.text.x = element_blank(),
+          legend.position = "none")
+  })
+p1[[1]] <- p1[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p1[[3]] <- p1[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p1, nrow = 1)
+p2 <- VlnPlot(list_seurat_7270m[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_7270[2]) 
+p2 <- lapply(p2, function(x){
+  x + xlab(Project(list_seurat_7270m[[1]])) +
+    theme(axis.text.x = element_blank(), 
+          legend.position = "none")
+  })
+p2[[1]] <- p2[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p2[[3]] <- p2[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p2, nrow = 1)
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These violin plots are created from 7271. The upper figures show the quality measures for 7271 which was aligned to the human genome. The second plot shows the quality measures for the same sample which was aligned to the mouse genome."
+
+p3 <- VlnPlot(list_seurat_7271[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_7271[1]) 
+p3 <- lapply(p1, function(x){
+  x + xlab(Project(list_seurat_7271[[1]])) +
+    theme(axis.text.x = element_blank(),
+          legend.position = "none")
+  })
+p3[[1]] <- p3[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p3[[3]] <- p3[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p3, nrow = 1)
+p4 <- VlnPlot(list_seurat_7271m[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_7271[2]) 
+p4 <- lapply(p4, function(x){
+  x + xlab(Project(list_seurat_7271m[[1]])) +
+    theme(axis.text.x = element_blank(), 
+          legend.position = "none")
+  })
+p4[[1]] <- p4[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p4[[3]] <- p4[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p4, nrow = 1)
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These scatter plots show the relation between the human and mouse data points for sample 7270 in relation to their percentage of mitochondrial genes. The first scatter plots shows the correlation with a correlation coefficient of 0.08 for 7270 which was aligned to the human genome. 7270 which was aligned to the mouse genome is shown in the second plot. Here we have an correlation coefficient of -0.09"
+
+plot1 <- FeatureScatter(list_seurat_7270[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_7270[1])
+plot1 <- plot1 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper) + 
+  scale_x_log10() + 
+  theme(legend.position = "none")
+plot2 <- FeatureScatter(list_seurat_7270m[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_7270[2])
+plot2 <- plot2 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper)+ 
+  scale_x_log10() +
+  theme(legend.position = "none")
+plot1 + plot2 
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These scatter plots show the relation between the human and mouse data points for sample 7271 in relation to their percentage of mitochondrial genes. The first scatter plots shows the correlation with a correlation coefficient of 0.5 for 7271 which was aligned to the human genome. 7271 which was aligned to the mouse genome is shown in the second plot. Here we have an correlation coefficient of -0.11"
+
+plot3 <- FeatureScatter(list_seurat_7271[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_7271[1])
+plot3 <- plot3 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper) + 
+  scale_x_log10() + 
+  theme(legend.position = "none")
+plot4 <- FeatureScatter(list_seurat_7271m[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_7271[2])
+plot4 <- plot4 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper)+ 
+  scale_x_log10() +
+  theme(legend.position = "none")
+plot3 + plot4 
+```

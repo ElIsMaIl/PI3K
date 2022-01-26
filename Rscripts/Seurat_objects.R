@@ -5,12 +5,12 @@ library(Seurat)
 
 
 # load data & prepare ----
-fnames <- list.files("data/Human_unfiltered/", pattern = "1820_Expression_Data_Unfiltered.st.gz", full.names = T)
-list.files("data/Human_unfiltered/","1820_Expression_Data_Unfiltered.st.gz", full.names = FALSE) %>% 
+fnames <- list.files("data/Mouse_unfiltered/", pattern = "7271_Expression_Data_Unfiltered_mouse.st.gz", full.names = T)
+list.files("data/Mouse_unfiltered/","7271_Expression_Data_Unfiltered_mouse.st.gz", full.names = FALSE) %>% 
   str_split(pattern = "_", simplify = T) %>% .[,1] -> names.exp
 
 
-list_seurat_1820h <- lapply(1:length(fnames), function(id){
+list_seurat_7271m <- lapply(1:length(fnames), function(id){
   df_expression <- read.table(fnames[id], sep= "\t", header=TRUE)
   df_expression <- df_expression[,-(3:4),drop=FALSE]
   
@@ -19,26 +19,26 @@ list_seurat_1820h <- lapply(1:length(fnames), function(id){
     dMcast(Gene~Cell_Index, value.var = "RSEC_Adjusted_Molecules") -> sparse_matrix
 
 exp <- CreateSeuratObject(sparse_matrix, project = names.exp[id], min.cells = 3, min.features = 200)
-exp[["percent.mt"]] <- PercentageFeatureSet(exp, pattern = "^MT-")
+exp[["percent.mt"]] <- PercentageFeatureSet(exp, pattern = "^mt-")
 
 return(exp)
 })
-names(list_seurat_1820h) <- names.exp
+names(list_seurat_7271m) <- names.exp
 
-str(list_seurat_1820h)
+str(list_seurat_7271m)
 
 ## save seurat-objects ----
-save(list_seurat_1820m, file = "data/unfilteredSeurat_1820_mouse.Rdata")
+save(list_seurat_7271m, file = "data/unfilteredSeurat_7271_mouse.Rdata")
 
 
 
 # load data & prepare ----
-fnames <- list.files("data/Mouse_unfiltered/", pattern = "1820_Expression_Data_Unfiltered_mouse.st.gz", full.names = T)
-list.files("data/Mouse_unfiltered/","1820_Expression_Data_Unfiltered_mouse.st.gz", full.names = FALSE) %>% 
+fnames <- list.files("data/7271_unfiltered/", pattern = "*.st.gz", full.names = T)
+list.files("data/7270_unfiltered/","*.st.gz", full.names = FALSE) %>% 
   str_split(pattern = "_", simplify = T) %>% .[,1] -> names.exp
 
 
-list_seurat_1820m <- lapply(1:length(fnames), function(id){
+list_seurat_7271 <- lapply(1:length(fnames), function(id){
   df_expression <- read.table(fnames[id], sep= "\t", header=TRUE)
   df_expression <- df_expression[,-(3:4),drop=FALSE]
   
@@ -47,12 +47,12 @@ list_seurat_1820m <- lapply(1:length(fnames), function(id){
     dMcast(Gene~Cell_Index, value.var = "RSEC_Adjusted_Molecules") -> sparse_matrix
   
   exp <- CreateSeuratObject(sparse_matrix, project = names.exp[id], min.cells = 3, min.features = 200)
-  exp[["percent.mt"]] <- PercentageFeatureSet(exp, pattern = "^mt-")
+  exp[["percent.mt"]] <- PercentageFeatureSet(exp, pattern = "^MT-")
   
   return(exp)
 })
-names(list_seurat_1820m) <- names.exp
+names(list_seurat_7271) <- names.exp
 
-str(list_seurat_1820m)
+str(list_seurat_7271)
 ## save seurat-objects ----
-save(list_seurat_1820m, file = "data/unfilteredSeurat_1822_mouse.Rdata")
+save(list_seurat_7271, file = "data/unfilteredSeurat_7271.Rdata")
