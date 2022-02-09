@@ -35,6 +35,7 @@ library(ggpubr)
 library(cowplot)
 library(DT)
 library(biomaRt)
+library(gplots)
 source("helperFunctions.R")
 ```
 
@@ -50,17 +51,17 @@ source("helperFunctions.R")
 - [x] Adjust section on Normalization for the comparison between mouse and human
 - [x] calculation of mt-expressed RNA in mouse -> update when finished
 - [x] annotation of FeatureScatter plot (What does 0.14 / 0.18 mean)?
-- [ ] overlap between cells, which have mouse and human genes vs. mouse genes -> venn-diagram / histogram
-- [ ] name-mapping between mouse / human
-- [ ] how many genes are the same in mouse human?
+- [x] overlap between cells, which have mouse and human genes vs. mouse genes -> venn-diagram / histogram
+- [x] name-mapping between mouse / human
+- [x] how many genes are the same in mouse human?
 
 
 This is currently on hold:
 - [ ] Upload data to irods/SODAR (fastq/bam/multiqc)
 - [x] Run pipeline for 7270
 - [x] Run pipeline for 7271 
-- [ ] Run pipeline for 7272 [x] Human [läuft] Maus
-- [ ] Run pipeline for 7273 [läuft]  Human [] Maus
+- [x] Run pipeline for 7272 
+- [ ] Run pipeline for 7273 [läuft] Maus
 
 # Data overview {#top}
 
@@ -362,6 +363,7 @@ I started with the unfiltered data sets provided by 7bridges. When creating the 
 
 ```{r}
 load("data/unfilteredSeurat_1820.Rdata")
+load("data/unfilteredSeurat_1820_human.Rdata")
 load("data/unfilteredSeurat_1820_mouse.Rdata")
 
 lapply(list_seurat_1820, function(x) dim(x) %>% enframe(name = "dim")) %>% 
@@ -379,6 +381,7 @@ mypal_1820 <- pal_jama()(2)
 
 ```{r}
 load("data/unfilteredSeurat_1822.Rdata")
+load("data/unfilteredSeurat_1822_human.Rdata")
 load("data/unfilteredSeurat_1822_mouse.Rdata")
 
 lapply(list_seurat_1822, function(x) dim(x) %>% enframe(name = "dim")) %>% 
@@ -496,3 +499,59 @@ plot3 + plot4
 ```
 
 If we use the suggested thresholds for filtering cells, we are loosing roughly 2000 to 4000 cells.
+
+# Overlapping Cells and Genes
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "The first Venn-diagram shows the number of cells from the samples 1820 and their overlap. While the second Venn-Diagram shows the overlap between the human and mouse sample from 1820. The genes which are overlapping are shown in the last output."
+
+#---- extract cell list from human and mouse from their Seurat object
+cell_List_human <- Cells(list_seurat_1820h[["1820"]]@assays[["RNA"]]@data)
+cell_List_mouse <- Cells(list_seurat_1820m[["1820"]]@assays[["RNA"]]@data)
+
+#---- extract gene list from human and mouse from their Seurat object
+gene_List_human <- row.names(list_seurat_1820h[["1820"]]@assays[["RNA"]]@data)
+gene_List_mouse <- row.names(list_seurat_1820m[["1820"]]@assays[["RNA"]]@data)
+
+
+#---- plot Venn diagrams
+venn_cells1820 <- venn(list(Human = cell_List_human,
+                            Mouse = cell_List_mouse))
+
+venn_genes1820 <- venn(list(Human = gene_List_human,
+                            Mouse = gene_List_mouse))
+
+#---- show intersection genes between both samples
+
+isect1820 <- attr(venn_genes1820, "intersections")
+isect1820$"Human:Mouse"
+
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "The first Venn-diagram shows the number of cells from the samples 1822 and their overlap. While the second Venn-Diagram shows the gene overlap between the human and mouse sample from 1822. The genes which are overlapping are shown in the last output."
+
+#---- extract cell list from human and mouse from their Seurat object
+cell_List_h <- Cells(list_seurat_1822h[["1822"]]@assays[["RNA"]]@data)
+cell_List_m <- Cells(list_seurat_1822m[["1822"]]@assays[["RNA"]]@data)
+
+#---- extract gene list from human and mouse from their Seurat object
+gene_List_h <- row.names(list_seurat_1822h[["1822"]]@assays[["RNA"]]@data)
+gene_List_m <- row.names(list_seurat_1822m[["1822"]]@assays[["RNA"]]@data)
+
+
+#---- plot Venn diagrams
+venn_cells1822 <- venn(list(Human = cell_List_h,
+                            Mouse = cell_List_m))
+
+venn_genes1822 <- venn(list(Human = gene_List_h,
+                            Mouse = gene_List_m))
+
+#---- show intersection genes between both samples
+
+isect1822 <- attr(venn_genes1822, "intersections")
+isect1822$"Human:Mouse"
+
+```

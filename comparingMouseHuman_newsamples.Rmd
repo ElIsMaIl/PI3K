@@ -35,21 +35,22 @@ library(ggpubr)
 library(cowplot)
 library(DT)
 library(biomaRt)
+library(gplots)
 source("helperFunctions.R")
 ```
 
 # Data overview {#top}
 
-1. HNSCC-PDX (treated with alpelisib + copanlisib, 7270): 
+1. HNSCC-PDX (treated with alpelisib + copanlisib, 7270, HN11097): 
     - The probe was separated after dissociation. Both parts were marked with a sample tag. Both probes were loaded on the cartridge and translated into cDNA. The libraries were prepared for the sample tag as well as the target cDNA.
 
-2. HNSCC-PDX (untreated, 7271): 
+2. HNSCC-PDX (untreated, 7271, HN11097): 
     - Right after dissociation the probe was loaded on the cartridge. This probe has no sample tag.
 
-3. HNSCC-PDX (untreated, 7272):
+3. HNSCC-PDX (untreated, 7272, HN10960):
     - Right after dissociation the probe was loaded on the cartridge. Thi sprobe has no sample tag.
   
-4. HNSCC-PDX (untreated + treated with alpelisib + copanlisib, 7273):
+4. HNSCC-PDX (untreated + treated with alpelisib + copanlisib, 7273, HN10620):
     - The probe was separated after dissociation. All three parts were marked with a sample tag. All probes were loaded on the catridge and translated into cDNA. The libraries were prepared for the sample tag as well as the target cDNA.
 
 # Material and Methods
@@ -289,6 +290,7 @@ I started with the unfiltered data sets provided by 7bridges. When creating the 
 
 ```{r}
 load("data/unfilteredSeurat_7270.Rdata")
+load("data/unfilteredSeurat_7270_human.Rdata")
 load("data/unfilteredSeurat_7270_mouse.Rdata")
 
 lapply(list_seurat_7270, function(x) dim(x) %>% enframe(name = "dim")) %>% 
@@ -306,6 +308,7 @@ mypal_7270 <- pal_jama()(2)
 
 ```{r}
 load("data/unfilteredSeurat_7271.Rdata")
+load("data/unfilteredSeurat_7271_human.Rdata")
 load("data/unfilteredSeurat_7271_mouse.Rdata")
 
 lapply(list_seurat_7271, function(x) dim(x) %>% enframe(name = "dim")) %>% 
@@ -319,6 +322,24 @@ knitr::kable(table_7271,
              caption = "This table shows the number of cells and genes from sample 7271. The first two rows show the numbers for the sample aligned to the human genome while the third and fourth row show the numbers for the sample aligned to the mouse genome.")
 
 mypal_7271 <- pal_jama()(2)
+```
+
+```{r}
+load("data/unfilteredSeurat_7272.Rdata")
+load("data/unfilteredSeurat_7272_human.Rdata")
+load("data/unfilteredSeurat_7272_mouse.Rdata")
+
+lapply(list_seurat_7272, function(x) dim(x) %>% enframe(name = "dim")) %>% 
+  bind_rows(.id = "experiment") %>% 
+  mutate(dim = ifelse(dim == 1, "nrGenes", "nrCells")) %>% 
+  as.data.frame() -> table_7272
+
+rownames(table_7272) <- c("Human"," ","Mouse","  ")
+
+knitr::kable(table_7272,
+             caption = "This table shows the number of cells and genes from sample 7272. The first two rows show the numbers for the sample aligned to the human genome while the third and fourth row show the numbers for the sample aligned to the mouse genome.")
+
+mypal_7272 <- pal_jama()(2)
 ```
 
 ```{r set-thresholds}
@@ -361,7 +382,7 @@ plot_grid(plotlist = p2, nrow = 1)
 
 p3 <- VlnPlot(list_seurat_7271[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
         ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_7271[1]) 
-p3 <- lapply(p1, function(x){
+p3 <- lapply(p3, function(x){
   x + xlab(Project(list_seurat_7271[[1]])) +
     theme(axis.text.x = element_blank(),
           legend.position = "none")
@@ -379,6 +400,32 @@ p4 <- lapply(p4, function(x){
 p4[[1]] <- p4[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
 p4[[3]] <- p4[[3]] + geom_hline(yintercept = mt.upper)
 plot_grid(plotlist = p4, nrow = 1)
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These violin plots are created from 7272. The upper figures show the quality measures for 7272 which was aligned to the human genome. The second plot shows the quality measures for the same sample which was aligned to the mouse genome."
+
+p5 <- VlnPlot(list_seurat_7272[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_7272[1]) 
+p5 <- lapply(p5, function(x){
+  x + xlab(Project(list_seurat_7272[[1]])) +
+    theme(axis.text.x = element_blank(),
+          legend.position = "none")
+  })
+p5[[1]] <- p5[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p5[[3]] <- p5[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p5, nrow = 1)
+p6 <- VlnPlot(list_seurat_7272m[[1]], features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), 
+        ncol = 3, pt.size = 0, log = TRUE, combine = FALSE, cols = mypal_7272[2]) 
+p6 <- lapply(p6, function(x){
+  x + xlab(Project(list_seurat_7272m[[1]])) +
+    theme(axis.text.x = element_blank(), 
+          legend.position = "none")
+  })
+p6[[1]] <- p6[[1]] + geom_hline(yintercept = c(nFeature.lower, nFeature.upper))
+p6[[3]] <- p6[[3]] + geom_hline(yintercept = mt.upper)
+plot_grid(plotlist = p6, nrow = 1)
 ```
 
 ```{r}
@@ -421,4 +468,108 @@ plot4 <- plot4 +
   scale_x_log10() +
   theme(legend.position = "none")
 plot3 + plot4 
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "These scatter plots show the relation between the human and mouse data points for sample 7272 in relation to their percentage of mitochondrial genes. The first scatter plots shows the correlation with a correlation coefficient of 0.55 for 7272 which was aligned to the human genome. 7272 which was aligned to the mouse genome is shown in the second plot. Here we have an correlation coefficient of 0.1"
+
+plot5 <- FeatureScatter(list_seurat_7272[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_7272[1])
+plot5 <- plot5 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper) + 
+  scale_x_log10() + 
+  theme(legend.position = "none")
+plot6 <- FeatureScatter(list_seurat_7272m[[1]], feature1 = "nCount_RNA", feature2 = "percent.mt",
+                        cols = mypal_7272[2])
+plot6 <- plot6 +
+  geom_vline(xintercept = c(nFeature.lower, nFeature.upper)) +
+  geom_hline(yintercept = mt.upper)+ 
+  scale_x_log10() +
+  theme(legend.position = "none")
+plot5 + plot6 
+```
+
+# Overlapping Cells and Genes
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "The first Venn-diagram shows the number of cells from the samples 7270 and their overlap. While the second Venn-Diagram shows the overlap between the human and mouse sample from 7270. The genes which are overlapping are shown in the last output."
+
+#---- extract cell list from human and mouse from their Seurat object
+cell_List_human <- Cells(list_seurat_7270h[["7270"]]@assays[["RNA"]]@data)
+cell_List_mouse <- Cells(list_seurat_7270m[["7270"]]@assays[["RNA"]]@data)
+
+#---- extract gene list from human and mouse from their Seurat object
+gene_List_human <- row.names(list_seurat_7270h[["7270"]]@assays[["RNA"]]@data)
+gene_List_mouse <- row.names(list_seurat_7270m[["7270"]]@assays[["RNA"]]@data)
+
+
+#---- plot Venn diagrams
+venn_cells7270 <- venn(list(Human = cell_List_human,
+                            Mouse = cell_List_mouse))
+
+venn_genes7270 <- venn(list(Human = gene_List_human,
+                            Mouse = gene_List_mouse))
+
+#---- show intersection genes between both samples
+
+isect7270 <- attr(venn_genes7270, "intersections")
+isect7270$"Human:Mouse"
+
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "The first Venn-diagram shows the number of cells from the samples 7271 and their overlap. While the second Venn-Diagram shows the overlap between the human and mouse sample from 7271. The genes which are overlapping are shown in the last output."
+
+#---- extract cell list from human and mouse from their Seurat object
+cell_List_h <- Cells(list_seurat_7271h[["7271"]]@assays[["RNA"]]@data)
+cell_List_m <- Cells(list_seurat_7271m[["7271"]]@assays[["RNA"]]@data)
+
+#---- extract gene list from human and mouse from their Seurat object
+gene_List_h <- row.names(list_seurat_7271h[["7271"]]@assays[["RNA"]]@data)
+gene_List_m <- row.names(list_seurat_7271m[["7271"]]@assays[["RNA"]]@data)
+
+
+#---- plot Venn diagrams
+venn_cells7271 <- venn(list(Human = cell_List_h,
+                            Mouse = cell_List_m))
+
+venn_genes7271 <- venn(list(Human = gene_List_h,
+                            Mouse = gene_List_m))
+
+#---- show intersection genes between both samples
+
+isect7271 <- attr(venn_genes7271, "intersections")
+isect7271$"Human:Mouse"
+
+```
+
+```{r}
+#| fig.keep = "all",
+#| fig.cap = "The first Venn-diagram shows the number of cells from the samples 7272 and their overlap. While the second Venn-Diagram shows the overlap between the human and mouse sample from 7272. The genes which are overlapping are shown in the last output."
+
+#---- extract cell list from human and mouse from their Seurat object
+cell_List_7272h <- Cells(list_seurat_7272h[["7272"]]@assays[["RNA"]]@data)
+cell_List_7272m <- Cells(list_seurat_7272m[["7272"]]@assays[["RNA"]]@data)
+
+#---- extract gene list from human and mouse from their Seurat object
+gene_List_7272h <- row.names(list_seurat_7272h[["7272"]]@assays[["RNA"]]@data)
+gene_List_7272m <- row.names(list_seurat_7272m[["7272"]]@assays[["RNA"]]@data)
+
+
+#---- plot Venn diagrams
+venn_cells7272 <- venn(list(Human = cell_List_7272h,
+                            Mouse = cell_List_7272m))
+
+venn_genes7272 <- venn(list(Human = gene_List_7272h,
+                            Mouse = gene_List_7272m))
+
+#---- show intersection genes between both samples
+
+isect7272 <- attr(venn_genes7272, "intersections")
+isect7272$"Human:Mouse"
+
 ```
