@@ -1,0 +1,296 @@
+---
+title: "Single cell sequencing of PDX models"
+description: |
+  Overview of data analysis for the pilot samples.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+options(scipen = 999)
+```
+
+```{r load-libraries}
+library(Matrix)
+library(Matrix.utils)
+library(tidyverse)
+library(rtracklayer)
+library(Seurat)
+library(knitr)
+library(janitor)
+library(ggsci)
+library(ggpubr)
+library(cowplot)
+library(DT)
+library(biomaRt)
+library(gplots)
+source("helperFunctions.R")
+```
+
+# Data overview {#top}
+```{r describe-samples}
+hnscc.samples <- tribble(
+  ~model, ~treatment, ~idx,
+  "HN", "untreated", 1820,
+  "HN", "alpelisib", 1822,
+  "HN11097", "untreated", 7271,
+  "HN11097", "alpelisib", 7270,
+  "HN11097", "copanlisib", 7270,
+  "HN10960", "untreated", 7272,
+  "HN10620", "untreated", 7273,
+  "HN10620", "alpelisib", 7273,
+  "HN10620", "copanlisib", 7273
+)
+
+datatable(hnscc.samples, rownames = FALSE,
+          caption = "Overview of the established PDX models and their corresponding treatment.")
+```
+
+1. HN (untreated, 1820): 
+    - The probe was separated after dissociation. One part was marked with a sample tag, the other was unlabeled. Both probes were loaded on the cartridge and translated into cDNA. The libraries were prepared for the sample tag as well as the target cDNA. They both have the same index.
+    - This approach was used to test the specifity of the sample tags.
+
+1. HN (treated with alpelisib, 1822): 
+    - Right after dissociation the probe was loaded on the cartridge. This probe has no sample tag and has a different index. 
+
+
+# Material and Methods
+
+All probes have a spike-in with PhiX before the sequencing at the BIH Core Facility Genomics.
+
+## Sequencing
+
+Cells were sequenced with the BD Rhapsody System. This is a cartridge-based system, where single cells are loaded and lysed. During lysis RNA is coupled to beads and is subsequently reverse-transcribed into cDNA. The system allows to multiplex different samples, where each sample is marked with a specific sample tag. With this system it is also possible to analyse protein expression on a single cell level using antibody based sequencing.
+
+## Alignment and Demultiplexing
+
+Demultiplexing and alignment to human and mouse reference genome (GrCH38 and GRCm38) was done using 7bridges WTA-pipeline. To create the index files for the mapping step with the STAR-Aligner we used the comprehensive gene annotation file which contains the comprehensive gene annotation on the reference chromosomes only. This is the main annotation file for most users and it includes protein-coding genes as well as non-protein coding genes.
+
+```{r overview-annotation}
+## load data and count # of annotated genes
+import("data/Gtf_Annotation/Human/gencode.v29.annotation.gtf") %>%
+  as_tibble() %>% 
+  dplyr::select(gene_type, gene_name) %>% 
+  distinct() %>% 
+  count(gene_type, name = "nr_genes_human") -> chr.human.genes
+
+import("data/Gtf_Annotation/Mouse/gencode.vM19.annotation.gtf") %>% 
+  as_tibble() %>% 
+  dplyr::select(gene_type, gene_name) %>% 
+  distinct() %>% 
+  count(gene_type, name = "nr_genes_mouse") -> chr.mouse.genes
+
+chr.human.genes %>% 
+  full_join(chr.mouse.genes, by = "gene_type") %>% 
+  arrange(-nr_genes_human) %>% 
+  datatable(rownames = FALSE, 
+            caption = "Overview of the number of annotated genes in different categories for the human and the mouse reference genome.")
+
+```
+
+-> back to [top][Data overview]
+
+# Question and Tasks
+
+The major question in this project is how does Alpelisib-treatment or Copanlisib-treatment change signaling in HNSCC. 
+
+Before we can do a signaling analysis, we have to solve a couple of technical tasks, which are detailed below:
+
+1. Why do we lose a lot of Reads ? 
+    - trimming of R1 is not necessary and possibly some reads can be preserved this way
+    - the parameters of the STAR- Aligner can still be optimized
+2. GC content is lower than expected (42%) - why?
+    - spike-in with PhiX -> however PhiX has a GC content of 47%, this is probably not the reason
+    - contamination with PhiX is about 2% and should not be a problem for alignment
+    - due to the necrotic material mtRNA could be enriched -> but also here the GC content is theoretically ~48% and is probably not crucial
+    - it could be a cell type specific effect -> are certain RNAs overexpressed in HNC tumors?
+    - Minor point: GC content is position dependent with a change at position 8-9 -> what is the reason for this?
+    - Structure of libraries is polyA -> is this really edited out -> if not, there should be enrichment at the end
+3. How many % of the samples are mouse specific?
+    - to my knowledge PDX models can contain up to 70-80\% mouse stromal cells - Are there any estimates for this for your models? RNA sequencing of xenograft-derived organoids from peritoneal carcinomatosis (Mathias ->EFRE project) found up to 80% mouse content in the sample. Mathias hypothesized based on the data that the proportion of stromal cells from mouse increases per passage.  
+    - comparison of tagged sequences with different alignment approaches.
+    - the current parameters for the alignment are unproblematic so far
+    - independent alignment on mouse or human suggests, using the annotation file provided by 7bridges:
+        - sample 1820 has 18% human vs 61% mouse
+        - sample 1822 has 20% human vs 64% mouse
+    - independent alignment on human suggests, using the long non-coding annotation file:
+        - sample 1820 has 37% human 
+        - sample 1822 has 40% human 
+    - independent alignment on mouse or human suggests, using the comprehensive annotation file:
+        - sample 1820 has 41% human vs 70% mouse
+        - sample 1822 has 42% human vs 71% mouse
+4. How many cells must be used for sequencing at the beginning?
+    - depending on:
+        - how many doublets / unmapped cells fall out?
+        - how many dying / dead cells fall out?
+        - how many cells are mouse-specific?
+        - are there clusters or subtypes of cells in the untreated sample that need to be considered?
+        
+-> back to [top][Data overview]
+
+## Quality Filters
+
+```{r read-metrics}
+fnames.metrics <- list.files(path = "data", ".*Metrics_Summary.csv", full.names = TRUE)
+names(fnames.metrics) <- list.files(path = "data", ".*Metrics_Summary.csv")
+
+lapply(fnames.metrics, readMetricsSummary) %>% 
+  bind_rows(.id = "idx") %>% 
+  as_tibble() %>% 
+  mutate(idx = str_remove(idx, "[^0-9]+")) %>% 
+  remove_missing() -> sum.metrics
+```
+
+```{r plot-metrics, fig.height=14, fig.width=14}
+sum.metrics %>% 
+  mutate(quality = str_remove_all(quality, "#")) %>% 
+  ggscatter(x = "measure", y = "value", color = "idx",
+            palette = "jco", size = 5, 
+            facet.by = "quality", scales = "free", ncol = 1,
+            rotate = TRUE)
+```
+
+```{r print-metrics}
+sum.metrics %>% 
+  mutate(quality = str_remove_all(quality, "#")) %>% 
+  pivot_wider(names_from = "idx", values_from = "value") %>% 
+  datatable()
+```
+
+
+## Molecular index statistics
+
+PCR and sequencing errors within UMI sequence generate artifact molecules and contribute to over estimation of molecules. Molecular Index (MI) adjustment identify these artifacts and discard or re-assign them to their original index (from BD slides).
+
+```{r umiStatistics, fig.cap= "The figure shows the molecular index statistics for the all samples."}
+fnames.umi <- list.files(path = "data", ".*UMI_Adjusted_Stats.csv", full.names = TRUE)
+names(fnames.umi) <- list.files(path = "data", ".*UMI_Adjusted_Stats.csv")
+
+lapply(fnames.umi, read_csv, comment = "##") %>% 
+  bind_rows(.id = "idx") %>% 
+  as_tibble() %>% 
+  mutate(idx = str_remove(idx, "[^0-9]+")) %>% 
+  remove_missing() -> umi.stats
+
+umi.stats %>% 
+  group_by(idx) %>% 
+  summarize(meanRSEC = mean(RSEC_Adjusted_Seq_Depth_without_Singletons))
+
+umi.stats %>% 
+  gghistogram(x = "RSEC_Adjusted_Seq_Depth_without_Singletons", fill = "Status", 
+              facet.by = "idx", palette = "jama") + 
+  scale_x_log10() + 
+  geom_vline(xintercept = 6, color = "darkred", lty = "dashed", size = 1)
+```
+
+In general, this is a two-step process, including RSEC-adjustment and DBEC-adjustment
+
+1. Recursive Substitution Error Correction (RSEC)
+
+- Corrects for MI errors that are derived from sequencing base calls and PCR substitution errors
+- Based on edit distance of molecular indices
+- Similar method used by most other competitors/academic pipelines
+
+2. Distribution Based Error Correction (DBEC)
+
+- Adjusts for errors derived from library preparation steps or sequencing base deletions.
+- Based on distribution of sequencing coverage of molecular indices
+- Developed at BD Genomics
+
+Due to the low sequencing depth in our example (see threshold in Figure), DBEC-adjustment was not applied.
+
+# Outline of analysis steps
+
+We use RSEC adjusted molecules from the pipeline at 7bridges as a starting point for the analysis of human single cells and refer to [@Luecken2019] as a guideline for the analysis of the count matrices.
+
+1. quality control
+
+    1. number of counts per cell
+    1. number of genes per cell
+    1. number of mitochondrial genes per cell
+
+1. normalization
+
+    1. on cellular counts
+    1. on gene level
+
+1. data correction (batch / cell cycle effect ...) and integration
+
+    1. regressing out biological effects
+    1. regressing out technical effects
+    1. integration of multiple samples
+
+1. expression recovery (denoising or imputation)
+1. feature selection and dimensionality reduction
+1. biological downstream analysis
+
+    1. clustering
+    1. pathway analysis
+    1. to be discussed ...
+
+-> back to [top][Data overview]
+
+# Single cell analysis
+## quality control
+
+I started with the unfiltered data sets provided by 7bridges. When creating the Seurat-Object (analysis-tool for sc-RNAsequencing), I only keep cells with at least 200 genes covered which drastically reduced the number of cells. The overall number of genes and the number of cells are shown in the table below.
+
+```{r load-seurat}
+fnames.seurat <- list.files(path = "data", ".*Seurat.*human.Rdata", full.names = T)
+names.seurat <- lapply(fnames.seurat, load, .GlobalEnv)
+seurat.full <- do.call(Map, c(f=list, sapply(names.seurat, as.symbol)))
+seurat.full <- seurat.full[[1]]
+names(seurat.full) <- names.seurat
+```
+
+```{r set-thresholds}
+nFeature.lower <- 200
+nFeature.upper <- 1500
+mt.upper <- 5
+```
+
+The next plots show the quality measures: number of unique genes, total molecules and the percentage of mitochondrial genes as violin plots. A high number of genes indicate possible doublets, whereas a high percentage of mitochondrial genes indicate dying cells.
+
+```{r plot-mt}
+lapply(seurat.full, function(x){
+    FetchData(x, "percent.mt")
+  }) %>% 
+  bind_rows(.id = "idx") %>% 
+  as_tibble(rownames = "cell_index") %>% 
+  mutate(idx = str_remove_all(idx, "[^0-9]")) -> mt.data
+
+ggviolin(mt.data, x = "idx", y = "percent.mt", fill = "idx", palette = "jco", 
+         xlab = "") + 
+  yscale("log10") + 
+  geom_hline(yintercept = mt.upper) + 
+  theme(legend.position = "none")
+```
+
+```{r plot-unique}
+lapply(seurat.full, function(x){
+    FetchData(x, "nFeature_RNA")
+  }) %>% 
+  bind_rows(.id = "idx") %>% 
+  as_tibble(rownames = "cell_index") %>% 
+  mutate(idx = str_remove_all(idx, "[^0-9]")) -> unique.genes
+
+ggviolin(unique.genes, x = "idx", y = "nFeature_RNA", fill = "idx", palette = "jco", 
+         xlab = "") + 
+  yscale("log10") + 
+  geom_hline(yintercept = nFeature.upper) + 
+  geom_hline(yintercept = nFeature.lower) + 
+  theme(legend.position = "none")
+```
+
