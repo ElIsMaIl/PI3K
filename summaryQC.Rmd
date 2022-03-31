@@ -36,6 +36,8 @@ library(cowplot)
 library(DT)
 library(biomaRt)
 library(gplots)
+library(clusterProfiler)
+library(org.Hs.eg.db)
 source("helperFunctions.R")
 ```
 
@@ -294,3 +296,58 @@ ggviolin(unique.genes, x = "idx", y = "nFeature_RNA", fill = "idx", palette = "j
   theme(legend.position = "none")
 ```
 
+
+#Go enrichtment analysis
+
+```{r filter mt.genes from Seurat objects}
+mito.genes_1820 <- grep(pattern = "^MT-", x = rownames(x = list_seurat_1820h[["1820"]]@assays[["RNA"]]), value = TRUE)
+
+mito.genes_1822 <- grep(pattern = "^MT-", x = rownames(x = list_seurat_1822h[["1822"]]@assays[["RNA"]]), value = TRUE)
+
+mito.genes_7270 <- grep(pattern = "^MT-", x = rownames(x = list_seurat_7270h[["7270"]]@assays[["RNA"]]), value = TRUE)
+ 
+mito.genes_7271 <- grep(pattern = "^MT-", x = rownames(x = list_seurat_7271h[["7271"]]@assays[["RNA"]]), value = TRUE)
+
+mito.genes_7272 <- grep(pattern = "^MT-", x = rownames(x = list_seurat_7272h[["7272"]]@assays[["RNA"]]), value = TRUE)
+
+mito.genes_7273 <- grep(pattern = "^MT-", x = rownames(x = list_seurat_7273h[["7273"]]@assays[["RNA"]]), value = TRUE)
+
+all.mito <- c(mito.genes_1820, mito.genes_1822, mito.genes_7270, mito.genes_7271, mito.genes_7272, mito.genes_7273)
+
+all.mito <- unique(all.mito)
+
+```
+
+
+```{r annotate genes}
+hsmart <- useMart(dataset = "hsapiens_gene_ensembl", biomart = "ensembl")
+total.genesid <- getBM(
+  attributes = c("ensembl_gene_id", "entrezgene_id", "hgnc_symbol"),
+  values = all.mito,
+  mart = hsmart)
+```
+
+```{r remove NAs from annotate genes}
+missing.data <- subset(total.genesid,is.na(total.genesid))
+
+total.genesidfiltered <- na.omit(total.genesid)
+```
+
+```{r Go enrichtment analysis}
+egohuman_mt <- enrichGO(gene = total.genesidfiltered$ensembl_gene_id,
+                 OrgDb = org.Hs.eg.db,
+                 keyType = "ENSEMBL",
+                 ont = "CC",
+                 pAdjustMethod = "BH",
+                 pvalueCutoff = 0.01,
+                 qvalueCutoff = 0.05,
+                 readable = TRUE)
+```
+
+```{r go plot}
+goplot(egohuman_mt) + ggtitle("Go plot from the go enrichtment analysis")
+```
+
+```{r dot plot}
+dotplot(egohuman_mt) + ggtitle("Dot plot for go enrichtment anaylsis")
+```
