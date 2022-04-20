@@ -297,7 +297,7 @@ ggviolin(unique.genes, x = "idx", y = "nFeature_RNA", fill = "idx", palette = "j
 ```
 
 
-#Go enrichtment analysis
+# Go enrichtment analysis
 
 ```{r filter mt.genes from Seurat objects}
 mito.genes_1820 <- grep(pattern = "^MT-", x = rownames(x = list_seurat_1820h[["1820"]]@assays[["RNA"]]), value = TRUE)
@@ -318,6 +318,11 @@ all.mito <- unique(all.mito)
 
 ```
 
+```{r}
+
+knitr::kable(all.mito,
+             caption = "This table shows the unique number of mt_genes from all samples. In total 214 mt_genes were found in all six samples")
+```
 
 ```{r annotate genes}
 hsmart <- useMart(dataset = "hsapiens_gene_ensembl", biomart = "ensembl")
@@ -344,10 +349,10 @@ egohuman_mt <- enrichGO(gene = total.genesidfiltered$ensembl_gene_id,
                  readable = TRUE)
 ```
 
-```{r go plot}
-goplot(egohuman_mt) + ggtitle("Go plot from the go enrichtment analysis")
+```{r goplot}
+goplot(egohuman_mt) + labs(caption = "Goplot shows the different relations derived from the go enrichtment results.")
 ```
 
-```{r dot plot}
-dotplot(egohuman_mt) + ggtitle("Dot plot for go enrichtment anaylsis")
+```{r dotplot}
+dotplot(egohuman_mt) + labs(caption = "Dotplot shows the different gene ratios, counts and the adjusted p.values from the go enrichtment results.")
 ```

@@ -18,3 +18,4 @@ readMetricsSummary <- function(fname){
   }) %>% 
     dplyr::bind_rows(.id = "quality")
 }
+
