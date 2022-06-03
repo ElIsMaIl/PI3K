@@ -69,6 +69,9 @@ options(future.globals.maxSize = 3 * 1024^3)
 
 ```{r Integrate across conditions}
 immune.anchors <- FindIntegrationAnchors(object.list = split_seurat, anchor.features = features, reduction = "rpca", k.anchor = 20)
+```
+
+```{r}
 integrated_seurat <- IntegrateData(anchorset = immune.anchors)
 ```
 
@@ -85,19 +88,18 @@ integrated_seurat <- FindClusters(integrated_seurat, resolution = 0.5)
 ```
 
 ```{r Visualization}
-p1 <- DimPlot(integrated_seurat, reduction = "umap", group.by = "sample")
+p1 <- DimPlot(integrated_seurat, reduction = "umap", group.by = "Sample_Tag")
 p2 <- DimPlot(integrated_seurat, reduction = "umap", label = TRUE, repel = TRUE)
-p3 <- DimPlot(integrated_seurat, reduction = "umap", split.by = "sample")
-p1
-p2
-p3
+p3 <- DimPlot(integrated_seurat, reduction = "umap", split.by = "Sample_Tag")
+#p1
+#p2
+#p3
 ```
 
 ```{r}
-PCAPlot(integrated_seurat, split.by = "sample")
+#PCAPlot(integrated_seurat, split.by = "seq_folder")
 ```
 
 ```{r}
 saveRDS(integrated_seurat, "data/integrated_seurat.rds")
 ```
-

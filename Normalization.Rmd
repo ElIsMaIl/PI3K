@@ -41,7 +41,8 @@ source("helperFunctions.R")
 ```
 
 ```{r load data}
-load("data/seurat_merged_filtered.RData")
+load("data/seuratmerged_filtered_tags.RData")
+metadata <- filtered_seurat@meta.data
 ```
 
 ```{r normalize-counts}
@@ -60,7 +61,9 @@ seurat_phase <- CellCycleScoring(seurat_phase,
 
 ```{r Identify the most variable genes}
 seurat_phase <- FindVariableFeatures(seurat_phase,
-                     verbose = FALSE)
+                                     selection.method = "vst",
+                                     nfeatures = 2000,
+                                     verbose = FALSE)
 ```
 
 ```{r scale the counts}
@@ -78,8 +81,15 @@ DimPlot(seurat_phase,
         split.by = "Phase")
 ```
 
+```{r}
+view(seurat_phase@meta.data)
+```
+
 ```{r split seurat object by condition to perform cell cycle scoring and SCT on all samples}
-split_seurat <- SplitObject(seurat_phase, split.by = "sample")
+split_seurat <- SplitObject(seurat_phase, split.by = "Sample_Tag")
+```
+
+```{r}
 split_seurat <- split_seurat[c("1820", "1822", "7270", "7271", "7272", "7273")]
 ```
 

@@ -1,0 +1,120 @@
+---
+title: "UMAP visualisation"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r load-libraries}
+library(Matrix)
+library(Matrix.utils)
+library(tidyverse)
+library(rtracklayer)
+library(Seurat)
+library(knitr)
+library(janitor)
+library(ggsci)
+library(ggpubr)
+library(cowplot)
+library(dplyr)
+library(DT)
+library(biomaRt)
+library(gplots)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(SingleCellExperiment)
+library(scales)
+library(RCurl)
+library(M3C)
+source("helperFunctions.R")
+```
+
+```{r load-data}
+integrated_seurat <- readRDS("data/integrated_seurat.rds")
+```
+
+```{r create-metadata-df}
+#DefaultAssay(integrated_seurat) <- "RNA"
+```
+
+```{r subset metadata for UMAP}
+subset_pilots <- subset(integrated_seurat, seq_folder == "1820" | seq_folder == "1822")
+subset_1820 <- subset(integrated_seurat, seq_folder == "1820")
+subset_70_71 <- subset(integrated_seurat, seq_folder == "7270" | seq_folder == "7271")
+subset_7272 <- subset(integrated_seurat, seq_folder == "7272")
+subset_7273 <- subset(integrated_seurat, seq_folder == "7273")
+subset_control <- subset(integrated_seurat, Sample_Tag == "Control")
+subset_alpelisib <- subset(integrated_seurat, Sample_Tag == "Alpelisib")
+subset_copanlisib <- subset(integrated_seurat, Sample_Tag == "Copanlisib")
+```
+
+```{r UMAP-all-samples,  fig.cap="UMAP from all samples group by sample_tags"}
+DimPlot(integrated_seurat, group.by = "Sample_Tag")
+```
+
+```{r tbl-cells-per-cluster-sampletag}
+# Extract identity and sample information from seurat object to determine the number of cells per cluster per sample_tag
+n_cells <- FetchData(integrated_seurat, 
+                     vars = c("ident", "Sample_Tag")) %>%
+        dplyr::count(ident, Sample_Tag) %>%
+        tidyr::spread(ident, n)
+
+# View table
+View(n_cells)
+
+datatable(n_cells,
+          caption = "The table shows the number of cells per cluster per sample_tag")
+
+```
+
+```{r UMAP-1820-sample,  fig.cap="UMAP from sample 1820 group by sample_tags control & control_tagged"}
+DimPlot(subset_1820, group.by = "Sample_Tag")
+DimPlot(subset_1820, split.by = "Sample_Tag")
+```
+
+```{r UMAP-pilot-sample,  fig.cap="UMAP from samples 1820 & 1822 group by sample_tags control, control_tagged & alpelisib"}
+DimPlot(subset_pilots, group.by = "Sample_Tag")
+DimPlot(subset_pilots, split.by = "Sample_Tag")
+```
+
+```{r UMAP-7273-sample,  fig.cap="UMAP from sample 7273 group by sample_tags control, alpelisib & copanlisib"}
+DimPlot(subset_7273, group.by = "Sample_Tag")
+DimPlot(subset_7273, split.by = "Sample_Tag")
+```
+
+```{r UMAP-7271-7270-sample,  fig.cap="UMAP from samples 7270 & 7271 group by sample_tags control, alpelisib & copanlisib"}
+DimPlot(subset_70_71, group.by = "Sample_Tag")
+DimPlot(subset_70_71, split.by = "Sample_Tag")
+```
+
+```{r UMAP-7272-sample,  fig.cap="UMAP from sample 7272 group by sample_tag control"}
+DimPlot(subset_7272, group.by = "Sample_Tag")
+DimPlot(subset_7272, split.by = "Sample_Tag")
+```
+
+```{r UMAP-control-sample,  fig.cap="UMAP from all samples group by sample_tag control"}
+DimPlot(subset_control, group.by = "Sample_Tag")
+DimPlot(subset_control, split.by = "Sample_Tag")
+```
+
+```{r UMAP-alpelisib-sample,  fig.cap="UMAP from all samples group by sample_tag alpelisib"}
+DimPlot(subset_alpelisib, group.by = "Sample_Tag")
+DimPlot(subset_alpelisib, split.by = "Sample_Tag")
+```
+
+```{r UMAP-copanlisib-sample,  fig.cap="UMAP from all samples group by sample_tag copanlisib"}
+DimPlot(subset_copanlisib, group.by = "Sample_Tag")
+DimPlot(subset_copanlisib, split.by = "Sample_Tag")
+```
