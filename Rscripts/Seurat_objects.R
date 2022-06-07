@@ -65,13 +65,13 @@ load("data/unfilteredSeurat_7272_human.Rdata")
 load("data/unfilteredSeurat_7273_human.Rdata")
 
 ## merged objects
-merged_seurat <- merge(x = list_seurat_1820h[[1]], y = c(list_seurat_1822h[[1]],list_seurat_7270h[[1]],list_seurat_7271h[[1]],list_seurat_7272h[[1]],list_seurat_7273h[[1]]), add.cell.ids = c("1820", "1822", "7270", "7271", "7272", "7273"), project = "HNSCC")
+mergedseurat_samples <- merge(x = list_seurat_1820h[[1]], y = c(list_seurat_1822h[[1]],list_seurat_7270h[[1]],list_seurat_7271h[[1]],list_seurat_7272h[[1]],list_seurat_7273h[[1]]), add.cell.ids = c("1820", "1822", "7270", "7271", "7272", "7273"), project = "HNSCC")
 
 ## add additional metadata to the merged Seurat object 
 
-merged_seurat$log10GenesPerUMI <- log10(merged_seurat$nFeature_RNA) / log10(merged_seurat$nCount_RNA)
+mergedseurat_samples$log10GenesPerUMI <- log10(mergedseurat_samples$nFeature_RNA) / log10(mergedseurat_samples$nCount_RNA)
 
-metadata <- merged_seurat@meta.data
+metadata <- mergedseurat_samples@meta.data
 metadata$cells <- rownames(metadata)
 metadata$sample <- NA
 metadata$sample[which(str_detect(metadata$cells, "^1820_"))] <- "1820"
@@ -86,8 +86,8 @@ metadata <- metadata %>%
                 nUMI = nCount_RNA,
                 nGene = nFeature_RNA)
 
-merged_seurat@meta.data <- metadata
+mergedseurat_samples@meta.data <- metadata
 
 ## save merged seurat object
 
-save(merged_seurat, file="data/merged_seurat.RData")
+save(mergedseurat_samples, file="data/mergedseurat_samples.RData")

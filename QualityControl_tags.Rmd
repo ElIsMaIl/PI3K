@@ -52,6 +52,15 @@ load("data/merged_seurat.RData")
 metadata_merged <- merged_seurat@meta.data
 ```
 
+```{r}
+metadata_merged <- metadata_merged %>% drop_na()
+```
+
+```{r}
+#which(is.na(metadata_merged), arr.ind=TRUE)
+#colSums(is.na(metadata_merged))
+```
+
 ```{r subset metadata for QC plots}
 subset_pilots <- subset(metadata_merged, metadata_merged$seq_folder == "1820" | metadata_merged$seq_folder == "1822")
 subset_7270 <- subset(metadata_merged, metadata_merged$seq_folder == 7270)
@@ -70,41 +79,57 @@ subset_pilots %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells HN15239")
 
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells <- table(subset_pilots$Sample_Tag)
+
+# View table
+kable(n_cells,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells per sample_tag from the two pilot samples.")
+ 
 subset_pilots %>% 
   	ggplot(aes(color=Sample_Tag, x=nUMI, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500) +
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMI HN15239")
 
 subset_pilots %>% 
   	ggplot(aes(color=Sample_Tag, x=nGene, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300) +
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene HN15239")
 
-# subset_pilots %>%
-#   	ggplot(aes(x=nGene, y=nUMI, color=Sample_Tag)) +
-#   	geom_point() +
-# 	scale_colour_gradient(low = "gray90", high = "black") +
-#   	stat_smooth(method=lm) +
-#   	scale_x_log10() +
-#   	scale_y_log10() +
-#   	theme_classic() +
-#   	geom_vline(xintercept = 500) +
-#   	geom_hline(yintercept = 250) +
-#   	facet_wrap(~Sample_Tag)
+
+subset_pilots %>%
+   	ggplot(aes(x=nGene, y=nUMI)) +
+   	geom_point() +
+ 	scale_colour_gradient(low = "gray90", high = "black") +
+   	stat_smooth(method=lm) +
+   	scale_x_log10() +
+   	scale_y_log10() +
+   	theme_classic() +
+   	geom_vline(xintercept = 500) +
+   	geom_hline(yintercept = 250) +
+   	facet_wrap(~Sample_Tag)
 
 subset_pilots %>% 
   	ggplot(aes(color=Sample_Tag, x=percent.mt, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2) +
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt HN15239")
 
 ```
 
@@ -116,7 +141,16 @@ subset_7270 %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells HN11097 (Sample 7270)")
+
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells_7270 <- table(subset_7270$Sample_Tag)
+
+# View table
+kable(n_cells_7270,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells per sample_tag from the 7270 sample.")
 
 subset_7270 %>% 
   	ggplot(aes(color=Sample_Tag, x=nUMI, fill=Sample_Tag)) + 
@@ -124,33 +158,39 @@ subset_7270 %>%
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMI HN11097 (Sample 7270)")
 
 subset_7270 %>% 
   	ggplot(aes(color=Sample_Tag, x=nGene, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene HN11097 (Sample 7270)")
 
-# subset_7270 %>% 
-#   	ggplot(aes(x=nUMI, y=nGene, color=Sample_Tag)) + 
-#   	geom_point() + 
-# 	scale_colour_gradient(low = "gray90", high = "black") +
-#   	stat_smooth(method=lm) +
-#   	scale_x_log10() + 
-#   	scale_y_log10() + 
-#   	theme_classic() +
-#   	geom_vline(xintercept = 500) +
-#   	geom_hline(yintercept = 250) +
-#   	facet_wrap(~Sample_Tag)
+subset_7270 %>% 
+   	ggplot(aes(x=nUMI, y=nGene)) + 
+   	geom_point() + 
+  	scale_colour_gradient(low = "gray90", high = "black") +
+   	stat_smooth(method=lm) +
+   	scale_x_log10() + 
+  	scale_y_log10() + 
+   	theme_classic() +
+   	geom_vline(xintercept = 500) +
+   	geom_hline(yintercept = 250) +
+   	facet_wrap(~Sample_Tag)
 
 subset_7270 %>% 
   	ggplot(aes(color=Sample_Tag, x=percent.mt, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt HN11097 (Sample 7270)")
 ```
 
 ```{r Visualize-qc-metrices-for-sample-7271, fig.cap="The figures show various Qc metrices for sample 7271."}
@@ -161,41 +201,56 @@ subset_7271 %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells HN11097 (Sample 7271)")
 
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells_7271 <- table(subset_7271$Sample_Tag)
+
+# View table
+kable(n_cells_7271,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells per sample_tag from the 7271 sample.")
+ 
 subset_7271 %>% 
   	ggplot(aes(color=Sample_Tag, x=nUMI, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMI HN11097 (Sample 7271)")
 
 subset_7271 %>% 
   	ggplot(aes(color=Sample_Tag, x=nGene, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene HN11097 (Sample 7271)")
 
-# subset_7271 %>% 
-#   	ggplot(aes(x=nUMI, y=nGene, color=Sample_Tag)) + 
-#   	geom_point() + 
-# 	scale_colour_gradient(low = "gray90", high = "black") +
-#   	stat_smooth(method=lm) +
-#   	scale_x_log10() + 
-#   	scale_y_log10() + 
-#   	theme_classic() +
-#   	geom_vline(xintercept = 500) +
-#   	geom_hline(yintercept = 250) +
-#   	facet_wrap(~Sample_Tag)
+subset_7271 %>%
+  	ggplot(aes(x=nUMI, y=nGene)) +
+  	geom_point() +
+	scale_colour_gradient(low = "gray90", high = "black") +
+  	stat_smooth(method=lm) +
+  	scale_x_log10() +
+  	scale_y_log10() +
+  	theme_classic() +
+  	geom_vline(xintercept = 500) +
+  	geom_hline(yintercept = 250) +
+  	facet_wrap(~Sample_Tag)
 
 subset_7271 %>% 
   	ggplot(aes(color=Sample_Tag, x=percent.mt, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt HN11097 (Sample 7270)")
 
 ```
 
@@ -208,7 +263,17 @@ subset_7272 %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells HN10960")
+
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells_7272 <- table(subset_7272$Sample_Tag)
+
+# View table
+kable(n_cells_7272,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells per sample_tag from the 7272 sample.")
+ 
 
 subset_7272 %>% 
   	ggplot(aes(color=Sample_Tag, x=nUMI, fill=Sample_Tag)) + 
@@ -216,33 +281,39 @@ subset_7272 %>%
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMI HN10960")
 
 subset_7272 %>% 
   	ggplot(aes(color=Sample_Tag, x=nGene, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene HN10960")
 
-# subset_7272 %>% 
-#   	ggplot(aes(x=nUMI, y=nGene, color=Sample_Tag)) + 
-#   	geom_point() + 
-# 	scale_colour_gradient(low = "gray90", high = "black") +
-#   	stat_smooth(method=lm) +
-#   	scale_x_log10() + 
-#   	scale_y_log10() + 
-#   	theme_classic() +
-#   	geom_vline(xintercept = 500) +
-#   	geom_hline(yintercept = 250) +
-#   	facet_wrap(~Sample_Tag)
-# 
+subset_7272 %>%
+  	ggplot(aes(x=nUMI, y=nGene)) +
+  	geom_point() +
+	scale_colour_gradient(low = "gray90", high = "black") +
+  	stat_smooth(method=lm) +
+  	scale_x_log10() +
+  	scale_y_log10() +
+  	theme_classic() +
+  	geom_vline(xintercept = 500) +
+  	geom_hline(yintercept = 250) +
+  	facet_wrap(~Sample_Tag)
+
 subset_7272 %>% 
   	ggplot(aes(color=Sample_Tag, x=percent.mt, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt HN10960")
 ```
 
 ```{r Visualize-qc-metrices-sample-7273, fig.cap="The figures show various QC metrices for sample 7273."}
@@ -253,42 +324,57 @@ subset_7273 %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells HN10621")
 
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells_7273 <- table(subset_7273$Sample_Tag)
+
+# View table
+kable(n_cells_7273,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells per sample_tag from the 7273 sample.")
+ 
 subset_7273 %>% 
   	ggplot(aes(color=Sample_Tag, x=nUMI, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMI HN10621")
 
 subset_7273 %>% 
   	ggplot(aes(color=Sample_Tag, x=nGene, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene HN10621")
 
 
-# subset_7273 %>% 
-#   	ggplot(aes(x=nUMI, y=nGene, color=Sample_Tag)) + 
-#   	geom_point() + 
-# 	scale_colour_gradient(low = "gray90", high = "black") +
-#   	stat_smooth(method=lm) +
-#   	scale_x_log10() + 
-#   	scale_y_log10() + 
-#   	theme_classic() +
-#   	geom_vline(xintercept = 500) +
-#   	geom_hline(yintercept = 250) +
-#   	facet_wrap(~Sample_Tag)
+subset_7273 %>%
+  	ggplot(aes(x=nUMI, y=nGene)) +
+  	geom_point() +
+	scale_colour_gradient(low = "gray90", high = "black") +
+  	stat_smooth(method=lm) +
+  	scale_x_log10() +
+  	scale_y_log10() +
+  	theme_classic() +
+  	geom_vline(xintercept = 500) +
+  	geom_hline(yintercept = 250) +
+  	facet_wrap(~Sample_Tag)
 
 subset_7273 %>% 
   	ggplot(aes(color=Sample_Tag, x=percent.mt, fill=Sample_Tag)) + 
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt HN10621")
 
 ```
 
@@ -300,7 +386,16 @@ subset_control %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells from the untreated control samples")
+
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells_control<- table(subset_control$Sample_Tag)
+
+# View table
+kable(n_cells_control,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells which were untreated.")
 
 #UMI count
 subset_control %>% 
@@ -309,7 +404,9 @@ subset_control %>%
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMi from the untreated control samples")
 
 #Gene Count
 subset_control %>% 
@@ -317,7 +414,22 @@ subset_control %>%
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene from the untreated control samples")
+
+#joint filtering effect
+subset_control %>%
+  	ggplot(aes(x=nUMI, y=nGene)) +
+  	geom_point() +
+	scale_colour_gradient(low = "gray90", high = "black") +
+  	stat_smooth(method=lm) +
+  	scale_x_log10() +
+  	scale_y_log10() +
+  	theme_classic() +
+  	geom_vline(xintercept = 500) +
+  	geom_hline(yintercept = 250) +
+  	facet_wrap(~Sample_Tag)
 
 #Mitochondrial count
 subset_control %>% 
@@ -325,7 +437,9 @@ subset_control %>%
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt from the untreated control samples")
 ```
 
 ```{r Copanlisib-tag, fig.cap="The figures are showing different quality metrices for the copanlisib samples."}
@@ -336,7 +450,16 @@ subset_copanlisib %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells from the samples treated with Copanlisib")
+
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells_copanlisib<- table(subset_copanlisib$Sample_Tag)
+
+# View table
+kable(n_cells_copanlisib,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells which were treated with Copanlisib.")
 
 #UMI count
 subset_copanlisib %>% 
@@ -345,7 +468,9 @@ subset_copanlisib %>%
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMI from the samples treated with Copanlisib")
 
 #Gene Count
 subset_copanlisib %>% 
@@ -353,7 +478,22 @@ subset_copanlisib %>%
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene from the samples treated with Copanlisib")
+
+#joint filtering effect
+subset_copanlisib %>%
+  	ggplot(aes(x=nUMI, y=nGene)) +
+  	geom_point() +
+	scale_colour_gradient(low = "gray90", high = "black") +
+  	stat_smooth(method=lm) +
+  	scale_x_log10() +
+  	scale_y_log10() +
+  	theme_classic() +
+  	geom_vline(xintercept = 500) +
+  	geom_hline(yintercept = 250) +
+  	facet_wrap(~Sample_Tag)
 
 #Mitochondrial count
 subset_copanlisib %>% 
@@ -361,7 +501,9 @@ subset_copanlisib %>%
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt from the samples treated with Copanlisib")
 ```
 
 ```{r Alpelisib-tag, fig.cap="The figures are showing different quality metrices for the alpelisib samples."}
@@ -372,7 +514,16 @@ subset_alpelisib %>%
   	theme_classic() +
   	theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("NCells")
+  	ggtitle("NCells from the samples treated with Alpelisib")
+
+# Extract identity and sample information from dataframe to determine the number of cells per sample_tag
+n_cells_alp<- table(subset_alpelisib$Sample_Tag)
+
+# View table
+kable(n_cells_alp,
+      col.names = c("Sample_Tag",
+                    "nCells"),
+      caption = "The table shows the number of cells which were treated with Alpelisib.")
 
 #UMI count
 subset_alpelisib %>% 
@@ -381,7 +532,9 @@ subset_alpelisib %>%
     scale_x_log10() + 
   	theme_classic() +
   	ylab("Cell density") +
-  	geom_vline(xintercept = 500)
+  	geom_vline(xintercept = 500)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nUMI from the samples treated with Alpelisib")
 
 #Gene Count
 subset_alpelisib %>% 
@@ -389,7 +542,22 @@ subset_alpelisib %>%
   	geom_density(alpha = 0.2) + 
   	theme_classic() +
   	scale_x_log10() + 
-  	geom_vline(xintercept = 300)
+  	geom_vline(xintercept = 300)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("nGene from the samples treated with Alpelisib")
+
+#joint filtering effect
+subset_alpelisib %>%
+  	ggplot(aes(x=nUMI, y=nGene)) +
+  	geom_point() +
+	scale_colour_gradient(low = "gray90", high = "black") +
+  	stat_smooth(method=lm) +
+  	scale_x_log10() +
+  	scale_y_log10() +
+  	theme_classic() +
+  	geom_vline(xintercept = 500) +
+  	geom_hline(yintercept = 250) +
+  	facet_wrap(~Sample_Tag)
 
 #Mitochondrial count
 subset_alpelisib %>% 
@@ -397,7 +565,9 @@ subset_alpelisib %>%
   	geom_density(alpha = 0.2) + 
   	scale_x_log10() + 
   	theme_classic() +
-  	geom_vline(xintercept = 2)
+  	geom_vline(xintercept = 2)+
+    theme(plot.title = element_text(hjust=0.5, face="bold")) +
+  	ggtitle("percent.mt from the samples treated with Alpelisib")
 ```
 
 ```{r set-threshold}
