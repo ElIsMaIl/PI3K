@@ -156,7 +156,7 @@ DimPlot(subset_control,
        caption = "UMAP grouped by the cell cycle phases and splitted by control sample tags.")+
   theme(plot.caption = element_text(hjust = 0.5))
 
-DimPlot(subset_7272,
+DimPlot(subset_control,
         group.by = "Sample_Tag") +
   labs(title = "UMAP visualisation of \n all control sample tags.")
 ```
@@ -169,7 +169,7 @@ DimPlot(subset_alpelisib,
        caption = "UMAP grouped by the cell cycle phases and splitted by the alpelisib sample tags.")+
   theme(plot.caption = element_text(hjust = 0.5))
 
-DimPlot(subset_7272,
+DimPlot(subset_alpelisib,
         group.by = "Sample_Tag") +
   labs(title = "UMAP visualisation of \n all alpelisib sample tags.")
 ```
