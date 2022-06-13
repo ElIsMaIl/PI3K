@@ -74,6 +74,23 @@ seurat_phase <- ScaleData(seurat_phase)
 seurat_phase <- RunPCA(seurat_phase)
 ```
 
+```{r}
+seurat_phase_umap <- RunUMAP(seurat_phase,
+                             dims = 1:40,
+                             reduction = "pca")
+
+```
+
+
+```{r}
+# Plot UMAP                             
+DimPlot(seurat_phase_umap,
+        reduction = "umap",
+        split.by = "Sample_Tag",
+        group.by = "Phase")   
+```
+
+
 ```{r Plot the PCA colored by cell cycle phase}
 DimPlot(seurat_phase,
         reduction = "pca",
