@@ -1,5 +1,5 @@
 ---
-title: "UMAP visualisation"
+title: "UMAP visualisation from cell cycle phases in combination with the different sample tags"
 description: |
   Overview of data analysis.
 author:
@@ -64,7 +64,17 @@ subset_copanlisib <- subset(integrated_seurat, Sample_Tag == "Copanlisib")
 
 ```{r UMAP-all-samples}
 DimPlot(integrated_seurat, group.by = "Sample_Tag") +
-  labs(title = "UMAP showing all samples \n grouped by their sample tags")
+  labs(title = "UMAP showing all samples \n grouped by their sample tags.")
+
+DimPlot(integrated_seurat, group.by = "Phase") +
+  labs(title = "UMAP showing all samples \n grouped by cell cylce phases.")
+```
+
+```{r}
+DimPlot(integrated_seurat,
+        group.by = "Phase",
+        split.by = "Sample_Tag") +
+  labs(title = "UMAP of all samples grouped by their sample tags \n and splitted by cell cycle phases")
 ```
 
 ```{r tbl-cells-per-cluster-sampletag}
@@ -78,8 +88,18 @@ n_cells <- FetchData(integrated_seurat,
 View(n_cells)
 
 datatable(n_cells,
-          caption = "The table shows the number of cells per cluster per sample tag")
+          caption = "The table shows the number of cells per cluster per sample tag.")
 
+# Extract identity and cell cylce phases from seurat object to determine the number of cells per cluster per cell cycle phase
+n_cells_cycle <- FetchData(integrated_seurat,
+                           vars = c("ident", "Phase")) %>%
+              dplyr::count(ident, Phase) %>%
+              tidyr::spread(ident, n)
+
+View(n_cells_cycle)
+
+datatable(n_cells_cycle,
+          caption = "The table shows the number of cells per cluster per cell cycle phase.")
 ```
 
 ```{r UMAP-1820-sample}

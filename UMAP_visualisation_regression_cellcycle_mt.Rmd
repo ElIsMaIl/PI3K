@@ -1,0 +1,83 @@
+---
+title: "UMAP visualisation with cell cycle effects & mt.genes regressed out"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r load-libraries}
+library(Matrix)
+library(Matrix.utils)
+library(tidyverse)
+library(rtracklayer)
+library(Seurat)
+library(knitr)
+library(janitor)
+library(ggsci)
+library(ggpubr)
+library(cowplot)
+library(dplyr)
+library(DT)
+library(biomaRt)
+library(gplots)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(SingleCellExperiment)
+library(scales)
+library(RCurl)
+library(M3C)
+source("helperFunctions.R")
+```
+
+```{r load data}
+load("data/seuratmerged_filtered_tags.RData")
+```
+
+```{r normalize-counts}
+seurat_phase <- NormalizeData(filtered_seurat)
+```
+
+```{r load-cell-cycle-markers}
+load("data/cycle.rda")
+```
+
+```{r Score cells for cell cycle}
+seurat_phase <- CellCycleScoring(seurat_phase, 
+                                 g2m.features = g2m_genes, 
+                                 s.features = s_genes)
+```
+
+```{r Identify the most variable genes}
+seurat_phase <- FindVariableFeatures(seurat_phase,
+                                     selection.method = "vst",
+                                     nfeatures = 2000,
+                                     verbose = FALSE)
+```
+
+```{r}
+options(future.globals.maxSize = 3 * 1024^3)
+```
+
+```{r scale the counts}
+seurat_phase@meta.data$CC.Difference <- seurat_phase@meta.data$S.Score - seurat_phase@meta.data$G2M.Score
+seurat_phase_regressed <- ScaleData(seurat_phase,
+                                    vars.to.regress = "CC.Difference",
+                                    features = rownames(seurat_phase))
+```
+
+```{r}
+saveRDS(seurat_phase_regressed, file="data/regressed_seurat.rds")
+```
+
