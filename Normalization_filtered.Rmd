@@ -1,0 +1,154 @@
+---
+title: "Normalization and regressing out unwanted variation"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+```
+
+```{r}
+options(future.globals.maxSize = 3 * 1024^3)
+```
+
+```{r load data}
+load("data/filtered_seurat.RData")
+filtered_meta <- filtered_seurat@meta.data
+```
+
+```{r normalize-counts}
+filtered_phase_seurat <- NormalizeData(filtered_seurat)
+```
+
+```{r load-cell-cycle-markers}
+load("data/cycle.rda")
+```
+
+```{r Score cells for cell cycle}
+filtered_phase_seurat <- CellCycleScoring(filtered_phase_seurat, 
+                                 g2m.features = g2m_genes, 
+                                 s.features = s_genes)
+```
+
+```{r Identify the most variable genes}
+filtered_phase_seurat <- FindVariableFeatures(filtered_phase_seurat,
+                                     selection.method = "vst",
+                                     nfeatures = 2000,
+                                     verbose = FALSE)
+```
+
+```{r scale the counts}
+filtered_phase_seurat <- ScaleData(filtered_phase_seurat)
+```
+
+```{r Perform PCA}
+filtered_phase_seurat <- RunPCA(filtered_phase_seurat)
+```
+
+```{r}
+filtered_phase_umap_seurat <- RunUMAP(filtered_phase_seurat,
+                             dims = 1:40,
+                             reduction = "pca")
+
+```
+
+```{r}
+# Plot UMAP                             
+DimPlot(filtered_phase_umap_seurat,
+        reduction = "umap",
+        split.by = "Sample_Tag",
+        group.by = "Phase")   
+```
+
+
+```{r Plot the PCA colored by cell cycle phase}
+DimPlot(filtered_phase_seurat,
+        reduction = "pca",
+        group.by= "Phase",
+        split.by = "Phase")
+```
+
+```{r}
+view(filtered_phase_seurat@meta.data)
+```
+
+```{r split seurat object by condition to perform cell cycle scoring and SCT on all samples}
+split_filtered_seurat <- SplitObject(filtered_phase_seurat, split.by = "seq_folder")
+```
+
+```{r}
+split_filtered_seurat <- split_filtered_seurat[c("1820", "1822", "7270", "7271", "7272", "7273")]
+```
+
+```{r}
+saveRDS(split_filtered_seurat, file="data/split_filtered_seurat.rds")
+```
+
+
+
+```{r}
+split_filtered_sct_mt_seurat <- split_filtered_seurat
+  #load("data/split_filtered_seurat.rds")
+```
+
+```{r}
+for (i in 1:length(split_filtered_sct_mt_seurat)) {
+    split_filtered_sct_mt_seurat[[i]] <- SCTransform(split_filtered_sct_mt_seurat[[i]], vars.to.regress = c("percent.mt"))
+    }
+```
+
+```{r}
+saveRDS(split_filtered_sct_mt_seurat, file="data/split_filtered_sct_mt_seurat.rds")
+```
+
+
+
+```{r}
+split_filtered_sct_phase_seurat <- split_filtered_seurat 
+  #load("data/split_filtered_seurat.rds")
+```
+
+```{r}
+for (i in 1:length(split_filtered_sct_phase_seurat)) {
+    split_filtered_sct_phase_seurat[[i]] <- SCTransform(split_filtered_sct_phase_seurat[[i]], vars.to.regress = c("S.Score", "G2M.Score"))
+    }
+```
+
+```{r}
+saveRDS(split_filtered_sct_phase_seurat, file="data/split_filtered_sct_phase_seurat.rds")
+```
+
+
+
+
+```{r}
+split_filtered_sct_mt_phase_seurat <- split_filtered_seurat
+  #load("data/split_filtered_seurat.rds")
+```
+
+```{r}
+for (i in 1:length(split_filtered_sct_mt_phase_seurat)) {
+    split_filtered_sct_mt_phase_seurat[[i]] <- SCTransform(split_filtered_sct_mt_phase_seurat[[i]], vars.to.regress = c("S.Score", "G2M.Score"))
+    }
+```
+
+```{r}
+saveRDS(split_filtered_sct_mt_phase_seurat, file="data/split_filtered_sct_mt_phase_seurat.rds")
+```

@@ -88,6 +88,7 @@ metadata <- metadata %>%
 
 mergedseurat_samples@meta.data <- metadata
 
+
 ## save merged seurat object
 
 save(mergedseurat_samples, file="data/mergedseurat_samples.RData")

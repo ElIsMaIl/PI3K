@@ -18,27 +18,10 @@ editor_options:
 ---
 
 ```{r load-libraries}
-library(Matrix)
-library(Matrix.utils)
-library(tidyverse)
-library(rtracklayer)
 library(Seurat)
-library(knitr)
-library(janitor)
-library(ggsci)
-library(ggpubr)
-library(cowplot)
-library(dplyr)
-library(DT)
-library(biomaRt)
-library(gplots)
-library(clusterProfiler)
-library(org.Hs.eg.db)
-library(SingleCellExperiment)
-library(scales)
+library(tidyverse)
 library(RCurl)
-library(M3C)
-source("helperFunctions.R")
+library(cowplot)
 ```
 
 ```{r load-data}

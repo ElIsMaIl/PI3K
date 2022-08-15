@@ -1,0 +1,185 @@
+---
+title: "UMAP visualisation from mitochondrial effects in combination with the different sample tags"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+```
+
+```{r load-data}
+integrated_seurat <- readRDS("data/integrated_seurat.rds")
+```
+
+```{r}
+integrated_seurat <- subset(integrated_seurat, subset = Sample_Tag != "NA")
+#colSums(is.na(integrated_seurat@meta.data))
+```
+
+```{r}
+summary(integrated_seurat@meta.data$percent.mt)
+```
+
+```{r}
+integrated_seurat@meta.data$factor.mt <- cut(integrated_seurat@meta.data$percent.mt,
+                                             breaks = c(-Inf, 1.041, 1.454, 2.078, Inf),
+                                             labels = c("Low", "Medium", "Medium high", "High"))
+```
+
+```{r}
+DimPlot(integrated_seurat, group.by = "factor.mt") +
+  labs(title = "UMAP showing all samples \n grouped by the mitochondrial expression")
+```
+
+```{r}
+DimPlot(integrated_seurat,
+        group.by = "factor.mt",
+        split.by = "Sample_Tag") +
+  labs(title = "UMAP of all samples grouped by \n their sample tags and \n splitted by mitochondrial expression")
+```
+
+```{r}
+# Extract identity and cell cylce phases from seurat object to determine the number of cells with mitochondiral expression.
+n_cells_mt <- FetchData(integrated_seurat,
+                           vars = c("ident", "factor.mt")) %>%
+              dplyr::count(ident, factor.mt) %>%
+              tidyr::spread(ident, n)
+
+View(n_cells_mt)
+
+datatable(n_cells_mt,
+          caption = "The table shows the number of cells with mitochondrial expression.")
+```
+
+```{r subset metadata for UMAP}
+subset_pilots <- subset(integrated_seurat, seq_folder == "1820" | seq_folder == "1822")
+subset_1820 <- subset(integrated_seurat, seq_folder == "1820")
+subset_70_71 <- subset(integrated_seurat, seq_folder == "7270" | seq_folder == "7271")
+subset_7272 <- subset(integrated_seurat, seq_folder == "7272")
+subset_7273 <- subset(integrated_seurat, seq_folder == "7273")
+subset_control <- subset(integrated_seurat, Sample_Tag == "Control")
+subset_alpelisib <- subset(integrated_seurat, Sample_Tag == "Alpelisib")
+subset_copanlisib <- subset(integrated_seurat, Sample_Tag == "Copanlisib")
+```
+
+```{r UMAP-1820-sample}
+DimPlot(subset_1820, 
+        split.by = "Sample_Tag",
+        group.by = "factor.mt") +
+  labs(title = "UMAP 1820 sample tags combined \n with mitochondrial expression",
+       caption = "Sample 1820 grouped by the mitochondrial expression and \n splitted by the different sample tags.") +
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_1820,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all sample tags from sample 1820.")
+
+```
+
+```{r UMAP-pilot-sample}
+DimPlot(subset_pilots, 
+        split.by = "Sample_Tag", 
+        group.by = "factor.mt") +
+  labs(title = "UMAP HN15239 sample tags combined \n with mitochondrial expression",
+       caption = "HN15239 grouped by mitochondrial expression and \n splitted by the different sample tags.")+
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_pilots,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all sample tags from HN15239.")
+```
+
+```{r UMAP-7273-sample}
+DimPlot(subset_7273, 
+        split.by = "Sample_Tag", 
+        group.by = "factor.mt")+
+  labs(title = "UMAP HN10621 sample tags combined \n with mitochondrial expression",
+       caption = "HN10621 grouped by the mitochondrial expression and \n splitted by the different sample tags.") +
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_7273,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all sample tags from HN10621.")
+```
+
+```{r UMAP-7271-7270-sample}
+DimPlot(subset_70_71,
+        split.by = "Sample_Tag",
+        group.by = "factor.mt") +
+  labs(title = "UMAP HN11097 sample tags combined \n with mitochondrial expression",
+       caption = "HN11097 grouped by the mitochondrial expression and \n splitted by the different sample tags.")+
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_70_71,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all sample tags from HN11097.")
+```
+
+```{r UMAP-7272-sample}
+DimPlot(subset_7272,
+        split.by = "Sample_Tag",
+        group.by = "factor.mt") +
+  labs(title = "UMAP HN10960 sample tags combined \n with mitochondrial expression",
+       caption = "HN10960 grouped by the mitochondrial expression and \n splitted by the different sample tags.") +
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_7272,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all sample tags from HN10960.")
+```
+
+```{r UMAP-control-sample}
+DimPlot(subset_control,
+        split.by = "Sample_Tag",
+        group.by = "factor.mt") +
+  labs(title = "UMAP control sample tags combined \n with mitochondrial expression",
+       caption = "UMAP grouped by the mitochondrial expression and \n splitted by control sample tags.")+
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_control,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all control sample tags.")
+```
+
+```{r UMAP-alpelisib-sample}
+DimPlot(subset_alpelisib,
+        split.by = "Sample_Tag",
+        group.by = "factor.mt") +
+  labs(title = "UMAP alpelisib sample tags combined \n with mitochondrial expression",
+       caption = "UMAP grouped by the mitochondrial expression and \n splitted by the alpelisib sample tags.")+
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_alpelisib,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all alpelisib sample tags.")
+```
+
+```{r UMAP-copanlisib-sample}
+DimPlot(subset_copanlisib,
+        split.by = "Sample_Tag",
+        group.by = "factor.mt") +
+  labs(title = "UMAP copanslisib sample tags combined \n with mitochondrial expression",
+       caption = "UMAP grouped by the mitochondrial expression and \n splitted by the copanlisib sample tags.")+
+  theme(plot.caption = element_text(hjust = 0.5))
+
+DimPlot(subset_copanlisib,
+        group.by = "Sample_Tag") +
+  labs(title = "UMAP visualisation of \n all copanlisib sample tags.")
+```

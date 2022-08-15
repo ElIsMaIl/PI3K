@@ -21,12 +21,10 @@ editor_options:
 library(Matrix)
 library(Matrix.utils)
 library(tidyverse)
-library(rtracklayer)
 library(Seurat)
 library(knitr)
 library(janitor)
 library(ggsci)
-library(ggpubr)
 library(cowplot)
 library(dplyr)
 library(DT)
@@ -38,11 +36,14 @@ library(SingleCellExperiment)
 library(scales)
 library(RCurl)
 library(M3C)
-source("helperFunctions.R")
+#source("helperFunctions.R")
 ```
 
 ```{r load data}
 load("data/seuratmerged_filtered_tags.RData")
+#colSums(is.na(filtered_seurat@meta.data))
+#filtered_seurat <- subset(filtered_seurat, subset = Sample_Tag != "NA")
+#colSums(is.na(filtered_seurat@meta.data))
 ```
 
 ```{r normalize-counts}
@@ -67,17 +68,71 @@ seurat_phase <- FindVariableFeatures(seurat_phase,
 ```
 
 ```{r}
-options(future.globals.maxSize = 3 * 1024^3)
+#options(future.globals.maxSize = 850*1024^2)
 ```
 
 ```{r scale the counts}
-seurat_phase@meta.data$CC.Difference <- seurat_phase@meta.data$S.Score - seurat_phase@meta.data$G2M.Score
-seurat_phase_regressed <- ScaleData(seurat_phase,
-                                    vars.to.regress = "CC.Difference",
-                                    features = rownames(seurat_phase))
+
+seurat_phase_regressed <- ScaleData(seurat_phase)
+
+# seurat_phase_regressed <- ScaleData(seurat_phase,
+#                                    vars.to.regress = c("S.Score", "G2M.Score"),
+#                                    features = rownames(seurat_phase))
+
+
+#seurat_phase@meta.data$CC.Difference <- seurat_phase@meta.data$S.Score - seurat_phase@meta.data$G2M.Score
+#seurat_phase_regressed <- ScaleData(seurat_phase,
+#                                    vars.to.regress = "CC.Difference",
+#                                    features = rownames(seurat_phase))
 ```
 
 ```{r}
-saveRDS(seurat_phase_regressed, file="data/regressed_seurat.rds")
+#saveRDS(seurat_phase_regressed, file="data/regressed_seurat.rds")
 ```
 
+```{r}
+#seurat_phase_regressed <- readRDS("data/regressed_seurat.rds")
+```
+
+```{r}
+seurat_phase_regressed <- RunPCA(seurat_phase_regressed)
+```
+
+```{r Plot the PCA colored by cell cycle phase}
+DimPlot(seurat_phase_regressed,
+        reduction = "pca",
+        group.by= "Phase",
+        split.by = "Phase")
+```
+
+```{r}
+seurat_phase_regressed_UMAP <- RunUMAP(seurat_phase_regressed,
+                              dims = 1:40,
+                              reduction = "pca")
+```
+
+```{r}
+# Plot UMAP                             
+DimPlot(seurat_phase_regressed_UMAP,
+        reduction = "umap",
+        split.by = "Sample_Tag",
+        group.by = "Phase")   
+```
+
+```{r split seurat object by condition to perform cell cycle scoring and SCT on all samples}
+split_seurat_regressed <- SplitObject(seurat_phase_regressed, split.by = "Sample_Tag")
+```
+
+```{r}
+split_seurat_regressed <- split_seurat_regressed[c("1820", "1822", "7270", "7271", "7272", "7273")]
+```
+
+```{r}
+for (i in 1:length(split_seurat_regressed)) {
+    split_seurat_regressed[[i]] <- SCTransform(split_seurat_regressed[[i]], vars.to.regress = c("percent.mt", "S.Score", "G2M.Score"))
+    }
+```
+
+```{r}
+saveRDS(split_seurat_regressed, file="data/split_seurat_regressed.rds")
+```

@@ -1,0 +1,117 @@
+---
+title: "Pseudobulk"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r load-libraries}
+library(tidyverse)
+library(cowplot)
+library(Matrix.utils)
+library(edgeR)
+library(dplyr)
+library(magrittr)
+library(Matrix)
+library(purrr)
+library(reshape2)
+library(S4Vectors)
+library(tibble)
+library(SingleCellExperiment)
+library(pheatmap)
+library(apeglm)
+library(png)
+library(DESeq2)
+library(RColorBrewer)
+```
+
+# Preparing object for pseudobulk analysis
+
+```{r}
+pseudo_seurat <- readRDS("data/integrated_seurat_RNA.rds")
+
+counts <- pseudo_seurat@assays$RNA@counts
+
+metadata <- pseudo_seurat@meta.data
+
+# Set up metadata as desired for aggregation and DE analysis
+metadata$cluster_id <- factor(pseudo_seurat@active.ident)
+
+# Create single cell experiment object
+sce <- SingleCellExperiment(assays = list(counts = counts), 
+                           colData = metadata)
+
+# Identify groups for aggregation of counts
+groups <- colData(sce)[, c("cluster_id", "sample")]
+```
+
+```{r}
+# Explore the raw counts for the dataset
+
+## Check the assays present
+assays(sce)
+
+## Explore the raw counts for the dataset
+dim(counts(sce))
+
+counts(sce)[1:6, 1:6]
+```
+
+```{r}
+## Explore the cellular metadata for the dataset
+dim(colData(sce))
+
+head(colData(sce))
+```
+
+# Acquiring necessary metrics for aggregation across cells in a sample
+
+```{r}
+# Named vector of cluster names
+kids <- purrr::set_names(levels(sce$cluster_id))
+kids
+
+# Total number of clusters
+nk <- length(kids)
+nk
+
+# Named vector of sample names
+sids <- purrr::set_names(levels(sce$sample))
+sids
+
+# Total number of samples 
+ns <- length(sids)
+ns
+```
+
+```{r}
+# Generate sample level metadata
+
+## Determine the number of cells per sample
+table(sce$sample)
+
+## Turn named vector into a numeric vector of number of cells per sample
+n_cells <- as.numeric(table(sce$sample))
+
+## Determine how to reorder the samples (rows) of the metadata to match the order of sample names in sids vector
+m <- match(sids, sce$sample)
+
+## Create the sample level metadata by combining the reordered metadata with the number of cells corresponding to each sample.
+ei <- data.frame(colData(sce)[m, ], 
+                 n_cells, row.names = NULL) %>% 
+  select(-"cluster_id")
+ei
+```
+
