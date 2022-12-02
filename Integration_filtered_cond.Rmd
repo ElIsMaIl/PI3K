@@ -1,0 +1,534 @@
+---
+title: "Integration"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+library(ggsci)
+```
+
+```{r}
+options(future.globals.maxSize = 3 * 1024^3)
+```
+
+
+## Performing integration on datasets normalized with SCTransform
+# filtered_sct_cond_seurat without regression
+
+```{r}
+split_filtered_sct_cond_seurat <- readRDS("data/split_filtered_sct_cond_seurat_mouse.rds")
+```
+
+```{r}
+integ_features <- SelectIntegrationFeatures(object.list = split_filtered_sct_cond_seurat,
+                                            nfeatures = 3000)
+```
+
+```{r select features and run PCA}
+ split_filtered_sct_cond_seurat <- PrepSCTIntegration(object.list = split_filtered_sct_cond_seurat,
+                                    anchor.features = integ_features)
+```
+
+```{r}
+  integ_anchors <- FindIntegrationAnchors(object.list = split_filtered_sct_cond_seurat,
+                                          normalization.method = "SCT",
+                                          anchor.features = integ_features)
+```
+
+```{r Integrate across conditions}
+ integrated_filtered_sct_cond_seurat <- IntegrateData(anchorset = integ_anchors, 
+                                           normalization.method = "SCT")
+```
+
+```{r downstream analysis on the corrected data}
+#DefaultAssay(integrated_filtered_sct_cond_seurat) <- "integrated"
+```
+
+```{r}
+integrated_filtered_sct_cond_seurat <- readRDS("data/integrated_filtered_sct_cond_seurat_mouse.rds")
+```
+
+```{r workflow for visualization and clustering}
+integrated_filtered_sct_cond_seurat <- ScaleData(integrated_filtered_sct_cond_seurat, verbose = FALSE)
+integrated_filtered_sct_cond_seurat <- RunPCA(integrated_filtered_sct_cond_seurat, npcs = 30, verbose = FALSE)
+integrated_filtered_sct_cond_seurat <- RunUMAP(integrated_filtered_sct_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_sct_cond_seurat <- FindNeighbors(integrated_filtered_sct_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_sct_cond_seurat <- FindClusters(integrated_filtered_sct_cond_seurat, resolution = 0.5)
+```
+
+```{r Visualization}
+p1 <- DimPlot(integrated_filtered_sct_cond_seurat, reduction = "umap", group.by = "Sample_Tag") + 
+      labs(title = "UMAP visualisation mouse without regression \n by conditions \n sct normalized") +
+      scale_fill_lancet() 
+p2 <- DimPlot(integrated_filtered_sct_cond_seurat, reduction = "umap", group.by = "seq_folder") + 
+      labs(title = "UMAP visualisation mouse without regression \n by samples \n sct normalized") +
+      scale_fill_lancet() 
+
+p1
+p2
+```
+
+```{r}
+#PCAPlot(integrated_seurat, split.by = "seq_folder")
+```
+
+```{r}
+saveRDS(integrated_filtered_sct_cond_seurat, "data/integrated_filtered_sct_cond_seurat_mouse.rds")
+```
+
+## Fast Integration using RPCA
+#split_filtered cond seurat without regression
+
+```{r}
+split_filtered_cond_seurat <- readRDS("data/split_filtered_cond_seurat_mouse.rds")
+```
+
+```{r}
+split_filtered_cond_seurat <- lapply(X = split_filtered_cond_seurat, FUN = function(x) {
+     x <- NormalizeData(x)
+     x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
+ })
+```
+
+```{r}
+features <- SelectIntegrationFeatures(object.list = split_filtered_cond_seurat)
+split_filtered_cond_seurat <- lapply(X = split_filtered_cond_seurat, FUN = function(x) {
+    x <- ScaleData(x, features = features, verbose = FALSE)
+   x <- RunPCA(x, features = features, verbose = FALSE)
+ })
+```
+
+```{r}
+integrated_filtered_rpca_cond_seurat <- FindIntegrationAnchors(object.list = split_filtered_cond_seurat, anchor.features = features, reduction = "rpca")
+```
+
+```{r}
+integrated_filtered_rpca_cond_seurat <- IntegrateData(anchorset = integrated_filtered_rpca_cond_seurat)
+```
+
+```{r}
+integrated_filtered_rpca_cond_seurat <- readRDS("data/integrated_filtered_rpca_cond_seurat_mouse.rds")
+```
+
+```{r}
+# Run the standard workflow for visualization and clustering
+integrated_filtered_rpca_cond_seurat <- ScaleData(integrated_filtered_rpca_cond_seurat, verbose = FALSE)
+integrated_filtered_rpca_cond_seurat <- RunPCA(integrated_filtered_rpca_cond_seurat, npcs = 30, verbose = FALSE)
+integrated_filtered_rpca_cond_seurat <- RunUMAP(integrated_filtered_rpca_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_cond_seurat <- FindNeighbors(integrated_filtered_rpca_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_cond_seurat <- FindClusters(integrated_filtered_rpca_cond_seurat, resolution = 0.5)
+```   
+
+```{r}
+p1_rpca <- DimPlot(integrated_filtered_rpca_cond_seurat, reduction = "umap", group.by = "Sample_Tag") + 
+      labs(title = "UMAP visualisation mouse without regression \n by conditions") +
+      scale_fill_lancet() 
+
+p2_rpca <- DimPlot(integrated_filtered_rpca_cond_seurat, reduction = "umap", group.by = "seq_folder") + 
+      labs(title = "UMAP visualisation mouse without regression \n by samples") +
+      scale_fill_lancet() 
+p1_rpca
+p2_rpca
+```
+
+```{r}
+saveRDS(integrated_filtered_rpca_cond_seurat, "data/integrated_filtered_rpca_cond_seurat_mouse.rds")
+```
+
+## Performing integration on datasets normalized with SCTransform
+# filtered_sct_mt_cond_seurat
+
+```{r load-data}
+split_filtered_sct_mt_cond_seurat <- readRDS("data/split_filtered_sct_mt_cond_seurat_mouse.rds")
+```
+
+```{r }
+integ_features <- SelectIntegrationFeatures(object.list = split_filtered_sct_mt_cond_seurat,
+                                          nfeatures = 3000)
+```
+
+```{r select features and run PCA}
+split_filtered_sct_mt_cond_seurat <- PrepSCTIntegration(object.list = split_filtered_sct_mt_cond_seurat,
+                                 anchor.features = integ_features)
+```
+
+```{r}
+integ_anchors <- FindIntegrationAnchors(object.list = split_filtered_sct_mt_cond_seurat,
+                                       normalization.method = "SCT",
+                                       anchor.features = integ_features)
+```
+
+```{r Integrate across conditions}
+integrated_sct_mt_cond_seurat <- IntegrateData(anchorset = integ_anchors,
+                                         normalization.method = "SCT")
+```
+
+```{r downstream analysis on the corrected data}
+#DefaultAssay(integrated_sct_mt_cond_seurat) <- "integrated"
+```
+
+```{r}
+integrated_sct_mt_cond_seurat <- readRDS("data/integrated_sct_mt_cond_seurat_mouse.rds")
+```
+
+```{r workflow for visualization and clustering}
+integrated_sct_mt_cond_seurat <- ScaleData(integrated_sct_mt_cond_seurat, verbose = FALSE)
+integrated_sct_mt_cond_seurat <- RunPCA(integrated_sct_mt_cond_seurat, npcs = 30, verbose = FALSE)
+integrated_sct_mt_cond_seurat <- RunUMAP(integrated_sct_mt_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_sct_mt_cond_seurat <- FindNeighbors(integrated_sct_mt_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_sct_mt_cond_seurat <- FindClusters(integrated_sct_mt_cond_seurat, resolution = 0.5)
+```
+
+```{r Visualization}
+p4 <- DimPlot(integrated_sct_mt_cond_seurat, reduction = "umap", group.by = "Sample_Tag") + 
+      labs(title = "UMAP visualisation mouse by conditions \n with mitochondrial gene expression regression") +
+      scale_fill_lancet() 
+p5 <- DimPlot(integrated_sct_mt_cond_seurat, reduction = "umap", group.by = "seq_folder") + 
+      labs(title = "UMAP visualisation mouse by samples \n with mitochondrial gene expression regression") +
+      scale_fill_lancet()
+
+p4
+p5
+```
+
+```{r}
+#PCAPlot(integrated_seurat, split.by = "seq_folder")
+```
+
+```{r}
+saveRDS(integrated_sct_mt_cond_seurat, "data/integrated_sct_mt_cond_seurat_mouse.rds")
+```
+
+
+## Fast Integration using RPCA
+#split_filtered_cond seurat with mt regression
+
+```{r}
+split_filtered_cond_seurat <- readRDS("data/split_filtered_cond_seurat_mouse.rds")
+```
+
+```{r}
+split_filtered_cond_seurat <- lapply(X = split_filtered_cond_seurat, FUN = function(x) {
+   x <- NormalizeData(x)
+   x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
+})
+```
+
+```{r}
+features <- SelectIntegrationFeatures(object.list = split_filtered_cond_seurat)
+split_filtered_seurat <- lapply(X = split_filtered_cond_seurat, FUN = function(x) {
+   x <- ScaleData(x, vars.to.regress = c("percent.mt"), features = features, verbose = FALSE)
+   x <- RunPCA(x, features = features, verbose = FALSE)
+})
+```
+
+```{r}
+integrated_filtered_rpca_mt_cond_seurat <- FindIntegrationAnchors(object.list = split_filtered_cond_seurat, anchor.features = features, reduction = "rpca")
+```
+
+```{r}
+integrated_filtered_rpca_mt_cond_seurat <- IntegrateData(anchorset = integrated_filtered_rpca_mt_cond_seurat)
+```
+
+```{r}
+integrated_filtered_rpca_mt_cond_seurat <- readRDS("data/integrated_filtered_rpca_mt_cond_seurat_mouse.rds")
+```
+
+
+```{r}
+#Run the standard workflow for visualization and clustering
+integrated_filtered_rpca_mt_cond_seurat <- ScaleData(integrated_filtered_rpca_mt_cond_seurat, verbose = FALSE)
+integrated_filtered_rpca_mt_cond_seurat <- RunPCA(integrated_filtered_rpca_mt_cond_seurat, npcs = 30, verbose = FALSE)
+integrated_filtered_rpca_mt_cond_seurat <- RunUMAP(integrated_filtered_rpca_mt_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_mt_cond_seurat <- FindNeighbors(integrated_filtered_rpca_mt_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_mt_cond_seurat <- FindClusters(integrated_filtered_rpca_mt_cond_seurat, resolution = 0.5)
+```   
+
+```{r}
+p4_rpca <- DimPlot(integrated_filtered_rpca_mt_cond_seurat, reduction = "umap", group.by = "Sample_Tag")  + 
+      labs(title = "UMAP visualisation mouse by conditions \n with mitochondiral gene expression regression") +
+      scale_fill_lancet() 
+p5_rpca <- DimPlot(integrated_filtered_rpca_mt_cond_seurat, reduction = "umap", group.by = "seq_folder")  + 
+      labs(title = "UMAP visualisation mouse by samples \n with mitochondiral gene expression regression") +
+      scale_fill_lancet() 
+p4_rpca
+p5_rpca
+```
+
+```{r}
+saveRDS(integrated_filtered_rpca_mt_cond_seurat, "data/integrated_filtered_rpca_mt_cond_seurat_mouse.rds")
+```
+
+
+
+## Performing integration on datasets normalized with SCTransform
+# filtered_sct_phase_cond_seurat
+
+```{r}
+split_filtered_sct_phase_cond_seurat <- readRDS("data/split_filtered_sct_phase_cond_seurat_mouse.rds")
+```
+
+```{r }
+integ_features <- SelectIntegrationFeatures(object.list = split_filtered_sct_phase_cond_seurat,
+                                            nfeatures = 3000)
+```
+
+```{r}
+split_filtered_sct_phase_cond_seurat <- PrepSCTIntegration(object.list = split_filtered_sct_phase_cond_seurat,
+                                   anchor.features = integ_features)
+```
+
+```{r}
+integ_anchors <- FindIntegrationAnchors(object.list = split_filtered_sct_phase_cond_seurat,
+                                        normalization.method = "SCT",
+                                        anchor.features = integ_features)
+```
+
+```{r}
+integrated_sct_phase_cond_seurat <- IntegrateData(anchorset = integ_anchors,
+                                          normalization.method = "SCT")
+```
+
+```{r}
+#DefaultAssay(integrated_sct_phase_seurat) <- "integrated"
+```
+
+```{r}
+integrated_sct_phase_cond_seurat <- readRDS("data/integrated_sct_phase_cond_seurat_mouse.rds")
+```
+
+
+```{r}
+integrated_sct_phase_cond_seurat <- ScaleData(integrated_sct_phase_cond_seurat, verbose = FALSE)
+integrated_sct_phase_cond_seurat <- RunPCA(integrated_sct_phase_cond_seurat, npcs = 30, verbose = FALSE)
+integrated_sct_phase_cond_seurat <- RunUMAP(integrated_sct_phase_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_sct_phase_cond_seurat <- FindNeighbors(integrated_sct_phase_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_sct_phase_cond_seurat <- FindClusters(integrated_sct_phase_cond_seurat, resolution = 0.5)
+```
+
+
+```{r}
+p7 <- DimPlot(integrated_sct_phase_cond_seurat, reduction = "umap", group.by = "Sample_Tag") + 
+      labs(title = "UMAP visualisation mouse by conditions \n with cell cycle regression") +
+      scale_fill_lancet() 
+
+p8 <- DimPlot(integrated_sct_phase_cond_seurat, reduction = "umap", group.by = "seq_folder") + 
+       labs(title = "UMAP visualisation mouse with phase regression \n by samples") +
+       scale_fill_lancet() 
+         
+
+p7
+p8
+
+```
+
+```{r}
+#PCAPlot(integrated_seurat, split.by = "seq_folder")
+```
+
+```{r}
+saveRDS(integrated_sct_phase_cond_seurat, "data/integrated_sct_phase_cond_seurat_mouse.rds")
+```
+
+
+## Fast Integration using RPCA
+#split_filtered_seurat with phase regression
+
+```{r}
+split_filtered_seurat <- readRDS("data/split_filtered_cond_seurat_mouse.rds")
+```
+
+```{r}
+split_filtered_seurat <- lapply(X = split_filtered_seurat, FUN = function(x) {
+   x <- NormalizeData(x)
+   x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
+})
+```
+
+```{r}
+features <- SelectIntegrationFeatures(object.list = split_filtered_seurat)
+split_filtered_seurat <- lapply(X = split_filtered_seurat, FUN = function(x) {
+   x <- ScaleData(x, vars.to.regress = c("S.Score", "G2M.Score"), features = features, verbose = FALSE)
+   x <- RunPCA(x, features = features, verbose = FALSE)
+})
+```
+
+```{r}
+integrated_filtered_rpca_phase_seurat <- FindIntegrationAnchors(object.list = split_filtered_seurat, anchor.features = features, reduction = "rpca")
+```
+
+```{r}
+integrated_filtered_rpca_phase_seurat <- IntegrateData(anchorset = integrated_filtered_rpca_phase_seurat)
+```
+
+```{r}
+integrated_filtered_rpca_phase_seurat <- readRDS("data/integrated_filtered_rpca_phase_seurat_mouse.rds")
+```
+
+
+```{r}
+# Run the standard workflow for visualization and clustering
+integrated_filtered_rpca_phase_seurat <- ScaleData(integrated_filtered_rpca_phase_seurat, verbose = FALSE)
+integrated_filtered_rpca_phase_seurat <- RunPCA(integrated_filtered_rpca_phase_seurat, npcs = 30, verbose = FALSE)
+integrated_filtered_rpca_phase_seurat <- RunUMAP(integrated_filtered_rpca_phase_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_phase_seurat <- FindNeighbors(integrated_filtered_rpca_phase_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_phase_seurat <- FindClusters(integrated_filtered_rpca_phase_seurat, resolution = 0.5)
+```   
+
+```{r}
+p7_rpca <- DimPlot(integrated_filtered_rpca_phase_seurat, reduction = "umap", group.by = "Sample_Tag") +
+      labs(title = "UMAP visualisation mouse by conditions with \n cell cycle regression") +
+      scale_fill_lancet()
+p8_rpca <- DimPlot(integrated_filtered_rpca_phase_seurat, reduction = "umap", group.by = "seq_folder") +
+       labs(title = "UMAP visualisation with phase regression \n by samples") +
+       scale_fill_lancet()
+
+p7_rpca
+p8_rpca
+
+```
+
+```{r}
+saveRDS(integrated_filtered_rpca_phase_seurat, "data/integrated_filtered_rpca_phase_seurat_mouse.rds")
+```
+
+
+
+## Performing integration on datasets normalized with SCTransform
+# filtered_sct_mt_phase_seurat
+
+```{r}
+split_filtered_sct_mt_phase_seurat <- readRDS("data/split_filtered_sct_mt_phase_cond_seurat_mouse.rds")
+```
+
+```{r }
+integ_features <- SelectIntegrationFeatures(object.list = split_filtered_sct_mt_phase_seurat,
+                                            nfeatures = 3000)
+```
+
+```{r}
+split_filtered_sct_mt_phase_seurat <- PrepSCTIntegration(object.list = split_filtered_sct_mt_phase_seurat, anchor.features = integ_features)
+```
+
+```{r}
+integ_anchors <- FindIntegrationAnchors(object.list = split_filtered_sct_mt_phase_seurat, normalization.method = "SCT", anchor.features = integ_features)
+```
+
+```{r}
+integrated_sct_mt_phase_seurat <- IntegrateData(anchorset = integ_anchors,
+                                         normalization.method = "SCT")
+```
+
+```{r}
+integrated_sct_mt_phase_seurat <- readRDS("data/integrated_sct_mt_phase_cond_seurat_mouse.rds")
+```
+
+
+```{r}
+#DefaultAssay(integrated_sct_mt_phase_seurat) <- "integrated"
+```
+
+```{r}
+integrated_sct_mt_phase_seurat <- ScaleData(integrated_sct_mt_phase_seurat, verbose = FALSE)
+integrated_sct_mt_phase_seurat <- RunPCA(integrated_sct_mt_phase_seurat, npcs = 30, verbose = FALSE)
+integrated_sct_mt_phase_seurat <- RunUMAP(integrated_sct_mt_phase_seurat, reduction = "pca", dims = 1:30)
+integrated_sct_mt_phase_seurat <- FindNeighbors(integrated_sct_mt_phase_seurat, reduction = "pca", dims = 1:30)
+integrated_sct_mt_phase_seurat <- FindClusters(integrated_sct_mt_phase_seurat, resolution = 0.5)
+```
+
+```{r}
+p10 <- DimPlot(integrated_sct_mt_phase_seurat, reduction = "umap", group.by = "Sample_Tag")  + 
+      labs(title = "UMAP visualisation mouse by conditions \n with cell cycle & \n mitochondiral gene expression regression") +
+      scale_fill_lancet() 
+p11 <- DimPlot(integrated_sct_mt_phase_seurat, reduction = "umap", group.by = "seq_folder")  + 
+      labs(title = "UMAP visualisation mouse by samples \n with cell cycle & \n mitochondiral gene expression regression") +
+      scale_fill_lancet() 
+p10
+p11
+```
+
+```{r}
+#PCAPlot(integrated_seurat, split.by = "seq_folder")
+```
+
+```{r}
+saveRDS(integrated_sct_mt_phase_seurat, "data/integrated_sct_mt_phase_cond_seurat_mouse.rds")
+```
+
+
+## Fast Integration using RPCA
+#split_filtered_seurat with mt and phase regression
+
+```{r}
+split_filtered_seurat <- readRDS("data/split_filtered_cond_seurat_mouse.rds")
+```
+
+```{r}
+split_filtered_seurat <- lapply(X = split_filtered_seurat, FUN = function(x) {
+   x <- NormalizeData(x)
+   x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = 2000)
+})
+```
+
+```{r}
+features <- SelectIntegrationFeatures(object.list = split_filtered_seurat)
+split_filtered_seurat <- lapply(X = split_filtered_seurat, FUN = function(x) {
+   x <- ScaleData(x, vars.to.regress = c("S.Score", "G2M.Score", "percent.mt"), features = features, verbose = FALSE)
+   x <- RunPCA(x, features = features, verbose = FALSE)
+})
+```
+
+```{r}
+integrated_filtered_rpca_mt_phase_seurat <- FindIntegrationAnchors(object.list = split_filtered_seurat, anchor.features = features, reduction = "rpca")
+```
+
+```{r}
+integrated_filtered_rpca_mt_phase_seurat <- IntegrateData(anchorset = integrated_filtered_rpca_mt_phase_seurat)
+```
+
+```{r}
+#integrated_filtered_rpca_mt_phase_seurat <- readRDS("data/integrated_filtered_rpca_mt_phase_seurat.rds")
+```
+
+
+```{r}
+# Run the standard workflow for visualization and clustering
+integrated_filtered_rpca_mt_phase_seurat <- ScaleData(integrated_filtered_rpca_mt_phase_seurat, verbose = FALSE)
+integrated_filtered_rpca_mt_phase_seurat <- RunPCA(integrated_filtered_rpca_mt_phase_seurat, npcs = 30, verbose = FALSE)
+integrated_filtered_rpca_mt_phase_seurat <- RunUMAP(integrated_filtered_rpca_mt_phase_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_mt_phase_seurat <- FindNeighbors(integrated_filtered_rpca_mt_phase_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_rpca_mt_phase_seurat <- FindClusters(integrated_filtered_rpca_mt_phase_seurat, resolution = 0.5)
+```   
+
+```{r}
+p10_rpca <- DimPlot(integrated_filtered_rpca_mt_phase_seurat, reduction = "umap", group.by = "seq_folder") +
+      labs(title = "UMAP visualisation mouse by conditions with \n cell cycle & \n mitochondrial gene expression regression") +
+      scale_fill_lancet()
+p11_rpca <- DimPlot(integrated_filtered_rpca_mt_phase_seurat, reduction = "umap", group.by = "Sample_Tag") +
+      labs(title = "UMAP visualisation mouse by conditions with \n cell cycle & \n mitochondrial gene expression regression") +
+      scale_fill_lancet()
+p10_rpca
+p11_rpca
+```
+
+```{r}
+saveRDS(integrated_filtered_rpca_mt_phase_seurat, "data/integrated_filtered_rpca_mt_phase_seurat_mouse.rds")
+```
