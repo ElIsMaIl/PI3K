@@ -1,0 +1,44 @@
+---
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+number_sections: true
+theme: lumen
+---
+
+```{r setup,warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(cache=TRUE,cache.lazy=FALSE,message=FALSE,warning=FALSE)
+library(dplyr)
+library(Seurat)
+library(Matrix)
+```
+
+```{r load_data,include=T}
+puram.meta <- data.frame(t(read.table(gzfile('E://CCCC/PI3K/data/SuplementaryFiles/AnnotationFiles/Human/Puram/GSE103322_HNSCC_all_data.txt.gz'),header=T,row.names=1,sep='\t',nrows=5,quote="")))
+colnames(puram.meta) <- c('maxima','lymph.node','cancer','non.cancer','non.cancer.type')
+dge <- read.table(gzfile('E://CCCC/PI3K/data/SuplementaryFiles/AnnotationFiles/Human/Puram/GSE103322_HNSCC_all_data.txt.gz'),as.is=T,header=F,row.names=1,sep='\t',skip=6)
+colnames(dge) <- row.names(puram.meta)
+```
+
+
+```{r}
+getwd()
+```
+
+```{r create_seurat_object,include=T}
+capture.output(puram <- CreateSeuratObject(counts = 2^dge-1, min.genes = 0, scale.factor = 100000, project ='puram', normalization.method='LogNormalize'))
+```
+
+```{r add_meta,include=T,fig.width=5,fig.height=3}
+puram  <- AddMetaData(puram,puram.meta)
+puram@meta.data$cancer <- plyr::mapvalues(puram@meta.data$cancer,from=c(0,1),
+                                          to=c('non-malignant','malignant'))
+puram@meta.data$cell.type <- plyr::mapvalues(puram@meta.data$non.cancer.type,
+                                             from=levels(as.factor(puram@meta.data$non.cancer.type)),
+                                             to=c('Fibroblast', 'malignant','B cell','Dendritic',
+                                                  'Endothelial','Fibroblast',
+                                                  'Macrophage','Mast','Myocyte','T cell'))
+saveRDS(puram,"E://CCCC/PI3K/data/SeuratObjects/celltypeIdentification/Human/Puram/puram_seurat.rds")
+```

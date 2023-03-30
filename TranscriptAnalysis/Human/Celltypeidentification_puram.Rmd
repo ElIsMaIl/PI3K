@@ -1,0 +1,126 @@
+---
+title: "Celltypeidentification_puram"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+library(ggsci)
+library(SingleR)
+library(caret)
+library(multtest)
+library(clustree)
+library(limma)
+library(readxl)
+library(ExperimentHub)
+```
+
+```{r load-data}
+puram_sct <- readRDS("E://CCCC/PI3K/data/SeuratObjects/sct_normalized/Human/puram_seurat_sct.rds")
+seurat_integrated_filtered <- readRDS("E://CCCC/PI3K/data/SeuratObjects/demultiplexed/Human/seurat_integrated_filtered_human.rds")
+```
+
+```{r}
+transfer_anchors <- FindTransferAnchors(puram_sct, seurat_integrated_filtered, dims = 1:30)
+predictions <- TransferData(anchorset = transfer_anchors, refdata = puram_sct$cell.type, dims = 1:30)
+seurat_integrated_filtered <- AddMetaData(seurat_integrated_filtered, metadata = predictions)
+```
+
+```{r}
+seurat_integrated_filtered$predicted.match <- seurat_integrated_filtered$predicted.id == puram_sct$cell.type
+table(seurat_integrated_filtered$predicted.match)
+table(seurat_integrated_filtered$predicted.id)
+```
+
+```{r}
+table(puram_sct$cell.type)
+```
+
+```{r}
+# Determine the K-nearest neighbor graph
+seurat_integrated_filtered <- FindNeighbors(object = seurat_integrated_filtered, dims = 1:30)
+# Determine the clusters for various resolutions
+seurat_integrated_filtered <- FindClusters(object = seurat_integrated_filtered, resolution = 0.4)
+# Explore resolutions
+seurat_integrated_filtered@meta.data %>% View()
+```
+
+```{r}
+# Assign identity of clusters
+Idents(object = seurat_integrated_filtered) <- "integrated_snn_res.0.4"
+```
+
+```{r}
+#Extract identity and sample information from seurat object to determine the number of cells per cluster per sample
+n_cells0.4 <- FetchData(seurat_integrated_filtered,
+                     vars = c("integrated_snn_res.0.4", "predicted.id")) %>%
+        dplyr::count(integrated_snn_res.0.4, predicted.id) %>%
+        tidyr::spread(integrated_snn_res.0.4, n)
+
+# View table
+View(n_cells0.4)
+```
+
+```{r}
+# Plot the UMAP
+DimPlot(seurat_integrated_filtered,
+        reduction = "umap",
+        label = TRUE,
+        label.size = 6)+
+        labs(title = "UMAP visualisation shows the number of clusters \n for the resolution 0.4") +
+        scale_fill_lancet(name="ClusterIDs")
+```
+```{r}
+seurat_integrated_filtered_renamedIdents <- RenameIdents(object = seurat_integrated_filtered,
+                                  "0" = "Dendritic",
+                                  "1" = "Dendritic",
+                                  "2" = "Dendritic",
+                                  "3" = "Dendritic",
+                                  "4" = "Dendritic",
+                                  "5" = "Dendritic",
+                                  "6" = "malignant",
+                                  "7" = "malignant",
+                                  "8" = "malignant",
+                                  "9" = "malignant",
+                                  "10" = "malignant",
+                                  "11" = "Dendritic")
+
+DimPlot(object = seurat_integrated_filtered_renamedIdents, 
+        reduction = "umap", 
+        label = TRUE,
+        label.size = 3,
+        repel = TRUE) +
+        labs(title = "UMAP visualisation shows the different celltypes \n for the resolution 0.4") +
+        scale_fill_lancet(name="Celltypes")
+```
+
+```{r}
+n_cells0.4.long <- pivot_longer(n_cells0.4, cols="0":"11", names_to = "ClusterID", values_to = "Occurances", values_drop_na = TRUE)
+plt_0.4 <- ggplot(n_cells0.4.long,aes(ClusterID, predicted.id)) +
+  geom_tile(aes(fill=Occurances)) +  
+  geom_text(aes(label = round(Occurances, 1)), size=2) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(y="Celltypes")
+
+plt_0.4
+```
+
+```{r}
+saveRDS(seurat_integrated_filtered_renamedIdents, "E://CCCC/PI3K/data/SeuratObjects/cellfiltering_umi/Human/Puram/seurat_integrated_filtered_puram.rds")
+```

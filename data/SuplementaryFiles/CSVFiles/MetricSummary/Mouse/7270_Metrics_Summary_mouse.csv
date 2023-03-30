@@ -1,0 +1,21 @@
+####################
+## BD WTA Rhapsody Analysis Pipeline Version 1.9.1
+## Analysis Date: 2021-12-15 14:02:56
+## Sample: 7270
+## Reference: index_star_CHR_mouse.tar
+####################
+#Sequencing Quality#
+Total_Reads_in_FASTQ,Pct_Reads_Too_Short,Pct_Reads_Low_Base_Quality,Pct_Reads_High_SNF,Pct_Reads_Filtered_Out,Total_Reads_After_Quality_Filtering,Library
+282914917,0,9.87,10.05,19.05,229012065,7270
+
+#Library Quality#
+Total_Filtered_Reads,Pct_Contaminating_PhiX_Reads_in_Filtered_R2,Pct_Q30_Bases_in_Filtered_R2,Pct_Assigned_to_Cell_Labels,Pct_Cellular_Reads_Aligned_Uniquely_to_Annotated_Transcriptome,Pct_Cellular_Reads_Aligned_Uniquely_to_Other_Genomic_Regions,Pct_Cellular_Reads_Aligned_Not_Unique,Pct_Cellular_Reads_Unaligned,Library
+229012065,0,71.83,91.95,64.59,8.74,8.71,6.79,7270
+
+#Reads and Molecules#
+Aligned_Reads_By_Type,Total_Raw_Molecules,Total_RSEC_Molecules,Mean_Raw_Sequencing_Depth,Mean_RSEC_Sequencing_Depth,Sequencing_Saturation,Target_Type
+147921428,18794630,15615538,7.87,9.47,96.86,mRNA
+
+#Cells RSEC#
+Putative_Cell_Count,Pct_Reads_from_Putative_Cells,Mean_Reads_per_Cell,Mean_Molecules_per_Cell,Median_Molecules_per_Cell,Mean_Targets_per_Cell,Median_Targets_per_Cell,Total_Targets_Detected,Target_Type
+3324,86.23,38371.71,3843.26,1568.5,1450.44,909,30235,mRNA

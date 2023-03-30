@@ -1,0 +1,186 @@
+---
+title: "Celltype_identification_human_singlr"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+library(ggsci)
+library(SingleR)
+library(caret)
+library(multtest)
+library(clustree)
+library(limma)
+library(readxl)
+```
+
+```{r}
+seurat_integrated <- load.Rdata("E://CCCC/PI3K/data/SeuratObjects/clusteranalysis/Human/seurat_integrated_newidents.rds")
+```
+
+```{r}
+ref <- celldex::HumanPrimaryCellAtlasData()
+```
+
+```{r}
+results_main <- SingleR(test = as.SingleCellExperiment(seurat_integrated), ref = ref, labels = ref$label.main)
+```
+
+```{r}
+seurat_integrated@meta.data$singlr_labels <- results_main$labels
+```
+
+```{r}
+metadata <- seurat_integrated@meta.data
+```
+
+```{r}
+# Assign identity of clusters
+Idents(object = seurat_integrated) <- "integrated_snn_res.1"
+```
+
+```{r}
+resolution.1 <- metadata %>%
+  group_by(integrated_snn_res.1) %>%
+  summarise(max = max(singlr_labels))
+
+show(resolution.1)
+```
+
+```{r}
+#Extract identity and sample information from seurat object to determine the number of cells per cluster per sample
+n_cells1.0 <- FetchData(seurat_integrated,
+                     vars = c("integrated_snn_res.1", "singlr_labels")) %>%
+        dplyr::count(integrated_snn_res.1, singlr_labels) %>%
+        tidyr::spread(integrated_snn_res.1, n)
+
+# View table
+View(n_cells1.0)
+```
+
+```{r}
+seurat_integrated <- RenameIdents(object = seurat_integrated,
+                                  "0" = "Gametocytes",
+                                  "1" = "Gametocytes",
+                                  "2" = "Gametocytes",
+                                  "3" = "Gametocytes",
+                                  "4" = "Gametocytes",
+                                  "5" = "Keratinocytes",
+                                  "6" = "B_cell",
+                                  "7" = "Fibroblasts",
+                                  "8" = "Fibroblasts",
+                                  "9" = "Fibroblasts",
+                                  "10" = "Gametocytes",
+                                  "11" = "Gametocytes",
+                                  "12" = "Fibroblasts",
+                                  "13" = "B_cell",
+                                  "14" = "Endothelial_cells",
+                                  "15" = "Gametocytes",
+                                  "16" = "Gametocytes",
+                                  "17" = "Gametocytes",
+                                  "18" = "Gametocytes",
+                                  "19" = "Gametocytes",
+                                  "20" = "Neuroepithelial_cell",
+                                  "21" = "Keratinocytes",
+                                  "22" = "Keratinocytes")
+
+DimPlot(object = seurat_integrated, 
+        reduction = "umap", 
+        label = TRUE,
+        label.size = 3,
+        repel = TRUE) +
+        labs(title = "UMAP visualisation shows the different celltypes \n for the resolution 1.0") +
+        scale_fill_lancet(name="Celltypes")
+```
+
+```{r}
+n_cells1.long <- pivot_longer(n_cells1.0, cols="0":"22", names_to = "ClusterID", values_to = "Occurances", values_drop_na = TRUE)
+```
+
+```{r}
+plt_1.0 <- ggplot(n_cells1.long,aes(ClusterID, singlr_labels)) +
+  geom_tile(aes(fill=Occurances)) +  
+  geom_text(aes(label = round(Occurances, 1)), size=2) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(y="Celltypes")
+
+plt_1.0
+```
+
+```{r}
+Idents(object = seurat_integrated) <- "integrated_snn_res.0.2"
+```
+
+```{r}
+#Extract identity and sample information from seurat object to determine the number of cells per cluster per sample
+n_cells0.2 <- FetchData(seurat_integrated,
+                     vars = c("integrated_snn_res.0.2", "singlr_labels")) %>%
+        dplyr::count(integrated_snn_res.0.2, singlr_labels) %>%
+        tidyr::spread(integrated_snn_res.0.2, n)
+
+# View table
+View(n_cells0.2)
+```
+
+```{r}
+resolution.02 <- metadata %>%
+  group_by(integrated_snn_res.0.2) %>%
+ summarise(max = max(singlr_labels))
+
+show(resolution.02)
+```
+```{r}
+seurat_integrated <- RenameIdents(object = seurat_integrated,
+                                  "0" = "Gametocytes",
+                                  "1" = "Gametocytes",
+                                  "2" = "Gametocytes",
+                                  "3" = "Fibroblasts",
+                                  "4" = "Keratinocytes",
+                                  "5" = "Gametocytes",
+                                  "6" = "Endothelial_cells",
+                                  "7" = "Keratinocytes",
+                                  "8" = "Neuroepithelial_cell",
+                                  "9" = "Gametocytes")
+
+DimPlot(object = seurat_integrated, 
+        reduction = "umap", 
+        label = TRUE,
+        label.size = 3,
+        repel = TRUE) +
+        labs(title = "UMAP visualisation shows the different celltypes \n for the resolution 0.2") +
+        scale_fill_lancet(name="Celltypes")
+```
+
+```{r}
+n_cells0.2.long <- pivot_longer(n_cells0.2, cols="0":"9", names_to = "ClusterID", values_to = "Occurances", values_drop_na = TRUE)
+```
+
+```{r}
+plt_0.2 <- ggplot(n_cells0.2.long,aes(ClusterID, singlr_labels)) +
+  geom_tile(aes(fill=Occurances)) +  
+  geom_text(aes(label = round(Occurances, 1)), size=2) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(y="Celltypes")
+
+plt_0.2
+```
+
+```{r}
+save(seurat_integrated, file="add path were you want to save the seurat object with the renamed idents")
+```

@@ -1,0 +1,142 @@
+---
+title: "Cellcluster Annotation with PCA Score otherMethods"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+library(dplyr)
+library(ggsci)
+library(SingleR)
+library(caret)
+library(multtest)
+library(clustree)
+library(limma)
+```
+
+```{r}
+seurat_integrated <- readRDS("E://CCCC/PI3K/data/SeuratObjects/clusteranalysis/Human/seurat_integrated_newidents.rds")
+```
+
+```{r}
+# Explore heatmap of PCs
+DimHeatmap(seurat_integrated, 
+           dims = 1:9, 
+           cells = 500, 
+           balanced = TRUE)
+```
+
+```{r}
+# Printing out the most variable genes driving PCs
+print(x = seurat_integrated[["pca"]], 
+      dims = 1:10, 
+      nfeatures = 5)
+```
+
+```{r}
+# Plot the elbow plot
+ElbowPlot(object = seurat_integrated, 
+          ndims = 30)
+```
+
+```{r}
+# Assign identity of clusters
+Idents(object = seurat_integrated) <- "integrated_snn_res.0.4"
+```
+
+```{r}
+Seurat::BuildClusterTree(seurat_integrated)
+```
+
+```{r}
+markers_human <- Seurat::FindAllMarkers(seurat_integrated)
+```
+
+```{r}
+DefaultAssay(seurat_integrated) <- "RNA"
+```
+
+```{r}
+cluster0_conserved_markers <- FindConservedMarkers(seurat_integrated,
+                              ident.1 = 0,
+                     	        grouping.var = "Sample_Tag",
+                              only.pos = TRUE,
+		                          logfc.threshold = 0.25)
+```
+
+```{r}
+annotations <- read.csv("E://CCCC/PI3K/data/SuplementaryFiles/AnnotationFiles/Human/gene_annotations_human.csv")
+```
+
+```{r}
+# Combine markers with gene descriptions 
+cluster0_ann_markers <- cluster0_conserved_markers %>% 
+                rownames_to_column(var="gene") %>% 
+                left_join(y = unique(annotations[, c("gene_name", "description")]),
+                          by = c("gene" = "gene_name"))
+
+View(cluster0_ann_markers)
+```
+
+```{r}
+# Create function to get conserved markers for any given cluster
+get_conserved <- function(cluster){
+  FindConservedMarkers(seurat_integrated,
+                       ident.1 = cluster,
+                       grouping.var = "Sample_Tag",
+                       only.pos = TRUE) %>%
+    rownames_to_column(var = "gene") %>%
+    left_join(y = unique(annotations[, c("gene_name", "description")]),
+               by = c("gene" = "gene_name")) %>%
+    cbind(cluster_id = cluster, .)
+  }
+```
+
+```{r}
+# Iterate function across desired clusters
+conserved_markers <- map_dfr(c(0:13), get_conserved)
+```
+
+```{r}
+# Extract top 10 markers per cluster
+top10 <- conserved_markers %>% 
+  mutate(avg_fc = (Copanlisib_avg_log2FC + Control_avg_log2FC + Alpelisib_avg_log2FC) /3) %>% 
+  group_by(cluster_id) %>% 
+  top_n(n = 10, 
+        wt = avg_fc)
+
+# Visualize top 10 markers per cluster
+View(top10)
+```
+
+```{r}
+# Plot interesting marker gene expression for cluster 0
+FeaturePlot(object = seurat_integrated, 
+                        features = c("SRGN", "IL1B", "HRCT1", "LRFN4", "CXCL3"),
+                         order = TRUE,
+                         min.cutoff = 'q10', 
+                         label = TRUE,
+			 repel = TRUE)
+```
+
+```{r}
+# Vln plot - cluster 20
+VlnPlot(object = seurat_integrated, 
+        features = c("SRGN", "IL1B", "HRCT1", "LRFN4", "CXCL3"))
+```

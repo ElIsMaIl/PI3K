@@ -1,0 +1,129 @@
+---
+title: "Normalization_other_methods"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+library(ggsci)
+```
+
+```{r}
+load("E://CCCC/PI3K/data/SeuratObjects/splitted/Mouse/split_filtered_cond_seurat.rds")
+filtered_phase_meta <- filtered_phase_seurat@meta.data
+```
+
+```{r}
+subset_control <- subset(filtered_phase_meta, filtered_phase_meta$Sample_Tag == "Control")
+subset_alpelisib <- subset(filtered_phase_meta, filtered_phase_meta$Sample_Tag == "Alpelisib")
+subset_copanlisib <- subset(filtered_phase_meta, filtered_phase_meta$Sample_Tag == "Copanlisib")
+```
+
+```{r}
+subset_control %>% 
+  	ggplot(aes(x=Phase, fill=Sample_Tag)) + 
+  	geom_bar() +
+    ggtitle("Number of untreated cells per cell cycle phase")+
+    scale_fill_lancet(name="Condition")
+    
+
+subset_alpelisib %>% 
+  	ggplot(aes(x=Phase, fill=Sample_Tag)) + 
+  	geom_bar() +
+    ggtitle("Number of cells treated by alpelisib /n per cell cycle phase") +
+    scale_fill_lancet(name="Condition")
+
+
+
+subset_copanlisib %>% 
+  	ggplot(aes(x=Phase, fill=Sample_Tag)) + 
+  	geom_bar() +
+    ggtitle("Number of cells treated by copanlisib \n per cell cycle phase") +
+    scale_fill_lancet(name="Condition")
+```
+
+```{r}
+subset_control %>% 
+  	ggplot(aes(x=Phase, fill=Sample_Tag)) + 
+  	geom_bar() +
+    facet_grid(~Xenograft) +
+    ggtitle("Number of untreated cells \n per cell cycle phase and xenograft") +
+    scale_fill_lancet()
+  	
+subset_copanlisib %>% 
+  	ggplot(aes(x=Phase, fill=Sample_Tag)) + 
+  	geom_bar() +
+    facet_grid(~Xenograft) +
+    ggtitle("Number of cells treated by alpelisib \n per cell cycle phase and xenograft") +
+    scale_fill_lancet()
+  	
+subset_alpelisib %>% 
+  	ggplot(aes(x=Phase, fill=Sample_Tag)) + 
+  	geom_bar() +
+    facet_grid(~Xenograft) +
+    ggtitle("Number of cells treated by copanlisib \n per cell cycle phase and xenograft") +
+    scale_fill_lancet()
+```
+
+
+##SCT normalization with different regressions
+```{r}
+load("E://CCCC/PI3K/data/SeuratObjects/splitted/Mouse/split_filtered_cond_seurat")
+split_filtered_sct_mt_cond_seurat <- split_filtered_cond_seurat
+```
+
+```{r}
+for (i in 1:length(split_filtered_sct_mt_cond_seurat)) {
+    split_filtered_sct_mt_cond_seurat[[i]] <- SCTransform(split_filtered_sct_mt_cond_seurat[[i]], vars.to.regress = c("percent.mt"))
+    }
+```
+
+```{r}
+saveRDS(split_filtered_sct_mt_cond_seurat, file="add path were you want to save the seuratobject")
+```
+
+```{r}
+load("E://CCCC/PI3K/data/SeuratObjects/splitted/Mouse/split_filtered_seurat.rds")
+split_filtered_sct_phase_cond_seurat <- split_filtered_cond_seurat
+```
+
+```{r}
+for (i in 1:length(split_filtered_sct_phase_cond_seurat)) {
+    split_filtered_sct_phase_cond_seurat[[i]] <- SCTransform(split_filtered_sct_phase_cond_seurat[[i]], vars.to.regress = c("S.Score", "G2M.Score"))
+    }
+```
+
+```{r}
+saveRDS(split_filtered_sct_phase_cond_seurat, file="add path were you want to save the seuratobject")
+```
+
+```{r}
+load("E://CCCC/PI3K/data/SeuratObjects/splitted/Mouse/split_filtered_cond_seurat")
+split_filtered_sct_mt_phase_cond_seurat <- split_filtered_cond_seurat
+```
+
+```{r}
+for (i in 1:length(split_filtered_sct_mt_phase_cond_seurat)) {
+    split_filtered_sct_mt_phase_cond_seurat[[i]] <- SCTransform(split_filtered_sct_mt_phase_cond_seurat[[i]], vars.to.regress = c("S.Score", "G2M.Score", "percent.mt"))
+    }
+```
+
+```{r}
+saveRDS(split_filtered_sct_mt_phase_cond_seurat, file="add path were you want to save the seuratobject")
+```

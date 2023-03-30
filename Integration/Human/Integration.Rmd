@@ -1,0 +1,89 @@
+---
+title: "Integration"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(dplyr)
+library(cowplot)
+library(ggsci)
+```
+
+```{r}
+options(future.globals.maxSize = 3 * 1024^3)
+```
+
+
+## Performing integration on datasets normalized with SCTransform
+# filtered_sct_cond_seurat without regression
+
+```{r}
+split_filtered_sct_cond_seurat <- readRDS("E://CCCC/PI3K/data/SeuratObjects/sct_normalized/Human/split_filtered_sct_cond_seurat.rds")
+```
+
+```{r}
+integ_features <- SelectIntegrationFeatures(object.list = split_filtered_sct_cond_seurat,
+                                            nfeatures = 3000)
+```
+
+```{r select features and run PCA}
+split_filtered_sct_cond_seurat <- PrepSCTIntegration(object.list = split_filtered_sct_cond_seurat,
+                                    anchor.features = integ_features)
+```
+
+```{r}
+integ_anchors <- FindIntegrationAnchors(object.list = split_filtered_sct_cond_seurat,
+                                          normalization.method = "SCT",
+                                          anchor.features = integ_features)
+```
+
+```{r Integrate across conditions}
+ integrated_filtered_sct_cond_seurat <- IntegrateData(anchorset = integ_anchors, 
+                                           normalization.method = "SCT")
+```
+
+```{r downstream analysis on the corrected data}
+DefaultAssay(integrated_filtered_sct_cond_seurat) <- "integrated"
+```
+
+```{r workflow for visualization and clustering}
+integrated_filtered_sct_cond_seurat <- ScaleData(integrated_filtered_sct_cond_seurat, verbose = FALSE)
+integrated_filtered_sct_cond_seurat <- RunPCA(integrated_filtered_sct_cond_seurat, npcs = 30, verbose = FALSE)
+integrated_filtered_sct_cond_seurat <- RunUMAP(integrated_filtered_sct_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_sct_cond_seurat <- FindNeighbors(integrated_filtered_sct_cond_seurat, reduction = "pca", dims = 1:30)
+integrated_filtered_sct_cond_seurat <- FindClusters(integrated_filtered_sct_cond_seurat, resolution = 0.4)
+```
+
+```{r Visualization}
+p1 <- DimPlot(integrated_filtered_sct_cond_seurat, reduction = "umap", group.by = "Sample_Tag") +
+      labs(title = "UMAP visualisation of the condition distribution") +
+      scale_fill_lancet()
+p2 <- DimPlot(integrated_filtered_sct_cond_seurat, reduction = "umap", label = TRUE, repel = TRUE)+
+      labs(title = "UMAP visualisation of the number of clusters") +
+      scale_fill_lancet()
+p3 <- DimPlot(integrated_filtered_sct_cond_seurat, reduction = "umap", group.by = "Xenograft")+
+      labs(title = "UMAP visualisation of the xenograft distribution") +
+      scale_fill_lancet()
+p1 
+p2 
+p3 
+```
+```{r}
+saveRDS(integrated_filtered_sct_cond_seurat, "E://CCCC/PI3K/data/SeuratObjects/integrated/Human/integrated_filtered_sct_cond_seurat.rds")
+```

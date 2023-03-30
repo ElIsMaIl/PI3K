@@ -1,0 +1,97 @@
+---
+title: "UMI_count"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+library(ggsci)
+library(SingleR)
+library(caret)
+library(multtest)
+library(clustree)
+library(limma)
+library(readxl)
+library(stats)
+```
+
+```{r}
+options(future.globals.maxSize = 4000 * 1024^2)
+```
+
+```{r}
+seurat_integrated <- readRDS("E://CCCC/PI3K/data/SeuratObjects/clusteranalysis/Human/seurat_integrated_newidents.rds")
+seurat_integrated_mouse <- readRDS("E://CCCC/PI3K/data/SeuratObjects/clusteranalysis/Mouse/seurat_integrated_newidents.rds")
+```
+
+
+```{r}
+transcripte_per_cell <- GetAssayData(object = seurat_integrated, assay = "RNA", slot = "counts")
+
+umi_counts <- transcripte_per_cell %>% 
+              colSums() %>% 
+              as.data.frame() %>% 
+              tibble::rownames_to_column(var = "Cell_Index")
+
+colnames(umi_counts) <- c("Cell_Index", "UMIs_human")
+umi_counts$Cell_Index <- gsub("Control_|Alpelisib_|Copanlisib_", "", umi_counts$Cell_Index)
+
+write.csv(umi_counts, "E://CCCC/PI3K/data/SuplementaryFiles/CSVFiles/umi_count_human.csv", row.names=FALSE)
+```
+
+
+```{r}
+transcripte_per_cell_mouse <- GetAssayData(object = seurat_integrated_mouse, assay = "RNA", slot = "counts")
+
+umi_counts_mouse <- transcripte_per_cell_mouse %>% 
+              colSums() %>% 
+              as.data.frame() %>% 
+              tibble::rownames_to_column(var = "Cell_Index")
+
+colnames(umi_counts_mouse) <- c("Cell_Index", "UMIs_mouse")
+
+write.csv(umi_counts_mouse, "E://CCCC/PI3K/data/SuplementaryFiles/CSVFiles/umi_count_mouse.csv", row.names=FALSE)
+```
+
+```{r}
+#create merged dataframe and replace NAs with zeros
+umi_counts_merged <- merge(umi_counts, umi_counts_mouse, all=TRUE)
+umi_counts_merged[is.na(umi_counts_merged)] <- 0
+
+#create label column for the scatter plot and identify cells
+umi_counts_merged$Labels <- "black"
+umi_counts_merged[umi_counts_merged$UMIs_human > umi_counts_merged$UMIs_mouse, "Labels"] <- "mainly_human"
+umi_counts_merged[umi_counts_merged$UMIs_mouse >= umi_counts_merged$UMIs_human, "Labels"] <- "mainly_mouse"
+umi_counts_merged[umi_counts_merged$UMIs_human == 0, "Labels"] <- "unique_mouse"
+umi_counts_merged[umi_counts_merged$UMIs_mouse == 0, "Labels"] <- "unique_human"
+
+table(umi_counts_merged$Labels)
+
+
+
+write.csv(umi_counts_merged, "E://CCCC/PI3K/data/SuplementaryFiles/CSVFiles/umi_count_merged.csv", row.names=FALSE)
+```
+
+```{r}
+#create scatter plot
+sp <- ggplot(umi_counts_merged, aes(x = UMIs_human, y = UMIs_mouse, fill=Labels)) + geom_point(aes(colour = Labels))
+sp + geom_abline() +
+  xlab("Transcripts human") +
+  ylab("Transcripts mouse")
+```

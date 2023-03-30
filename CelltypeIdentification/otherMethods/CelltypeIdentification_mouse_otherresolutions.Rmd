@@ -1,0 +1,206 @@
+---
+title: "CelltypeIdentification_mouse_otherResolutions"
+description: |
+  Overview of data analysis.
+author:
+  - name: Manuela Benary / Mohammad El-Ismail
+    affiliation: CUBI / CCCC
+    affiliation_url: 
+date: "`r Sys.Date()`"
+output: 
+  distill::distill_article:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r load-libraries}
+library(Seurat)
+library(tidyverse)
+library(RCurl)
+library(cowplot)
+library(ggsci)
+library(SingleR)
+library(caret)
+library(multtest)
+library(clustree)
+library(limma)
+library(readxl)
+```
+
+```{r}
+seurat_integrated <- load.Rdata("E://CCCC/PI3K/data/SeuratObjects/clusteranalysis/Mouse/seurat_integrated_newidents.rds")
+```
+
+```{r}
+ref <- celldex::MouseRNAseqData()
+```
+
+```{r}
+results_main <- SingleR(test = as.SingleCellExperiment(seurat_integrated), ref = ref, labels = ref$label.main)
+```
+
+```{r}
+seurat_integrated@meta.data$singlr_labels <- results_main$labels
+```
+
+```{r}
+metadata <- seurat_integrated@meta.data
+```
+
+```{r}
+# Assign identity of clusters
+Idents(object = seurat_integrated) <- "integrated_snn_res.1"
+```
+
+```{r}
+resolution.1 <- metadata %>%
+  group_by(integrated_snn_res.1) %>%
+  summarise(max = max(singlr_labels))
+
+show(resolution.1)
+```
+
+```{r}
+#Extract identity and sample information from seurat object to determine the number of cells per cluster per sample
+n_cells1.0_mouse <- FetchData(seurat_integrated,
+                     vars = c("integrated_snn_res.1", "singlr_labels")) %>%
+        dplyr::count(integrated_snn_res.1, singlr_labels) %>%
+        tidyr::spread(integrated_snn_res.1, n)
+
+# View table
+View(n_cells1.0_mouse)
+```
+
+```{r}
+seurat_integrated_mouse <- RenameIdents(object = seurat_integrated,
+                                  "0" = "Neurons",
+                                  "1" = "Neurons",
+                                  "2" = "Neurons",
+                                  "3" = "Neurons",
+                                  "4" = "Neurons",
+                                  "5" = "Neurons",
+                                  "6" = "Neurons",
+                                  "7" = "Neurons",
+                                  "8" = "Neurons",
+                                  "9" = "Microglia",
+                                  "10" = "Microglia",
+                                  "11" = "Microglia",
+                                  "12" = "Fibroblasts",
+                                  "13" = "Neurons",
+                                  "14" = "Neurons",
+                                  "15" = "Neurons",
+                                  "16" = "Fibroblasts",
+                                  "17" = "Fibroblasts",
+                                  "18" = "Neurons",
+                                  "19" = "Neurons",
+                                  "20" = "Neurons",
+                                  "21" = "Endothelial cells",
+                                  "22" = "Neurons",
+                                  "23" = "Endothelial cells",
+                                  "24" = "Neurons",
+                                  "25" = "Neurons",
+                                  "26" = "B_cells")
+
+DimPlot(object = seurat_integrated_mouse, 
+        reduction = "umap", 
+        label = TRUE,
+        label.size = 3,
+        repel = TRUE) +
+        labs(title = "UMAP visualisation shows the different celltypes \n for the resolution 1.0 mouse") +
+        scale_fill_lancet(name="Celltypes")
+```
+
+```{r}
+n_cells1.long_mouse <- pivot_longer(n_cells1.0_mouse, cols="0":"26", names_to = "ClusterID", values_to = "Occurances", values_drop_na = TRUE)
+```
+
+```{r}
+plt_1.0 <- ggplot(n_cells1.long,aes(ClusterID, singlr_labels)) +
+  geom_tile(aes(fill=Occurances)) +  
+  geom_text(aes(label = round(Occurances, 1)), size=2) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(y="Celltypes")
+
+plt_1.0
+```
+
+```{r}
+Idents(object = seurat_integrated) <- "integrated_snn_res.0.8"
+```
+
+```{r}
+resolution.08 <- metadata %>%
+  group_by(integrated_snn_res.0.8) %>%
+ summarise(max = max(singlr_labels))
+
+show(resolution.08)
+```
+
+```{r}
+#Extract identity and sample information from seurat object to determine the number of cells per cluster per sample
+n_cells0.8 <- FetchData(seurat_integrated,
+                     vars = c("integrated_snn_res.0.8", "singlr_labels")) %>%
+        dplyr::count(integrated_snn_res.0.8, singlr_labels) %>%
+        tidyr::spread(integrated_snn_res.0.8, n)
+
+# View table
+View(n_cells0.8)
+```
+
+```{r}
+seurat_integrated_mouse <- RenameIdents(object = seurat_integrated,
+                                  "0" = "Neurons",
+                                  "1" = "Neurons",
+                                  "2" = "Neurons",
+                                  "3" = "Microglia",
+                                  "4" = "Neurons",
+                                  "5" = "Neurons",
+                                  "6" = "Neurons",
+                                  "7" = "Neurons",
+                                  "8" = "Microglia",
+                                  "9" = "Neurons",
+                                  "10" = "Neurons",
+                                  "11" = "Fibroblasts",
+                                  "12" = "Neurons",
+                                  "13" = "Neurons",
+                                  "14" = "Neurons",
+                                  "15" = "Fibroblasts",
+                                  "16" = "Fibroblasts",
+                                  "17" = "Neurons",
+                                  "18" = "Neurons",
+                                  "19" = "Neurons",
+                                  "20" = "Neurons",
+                                  "21" = "Endothelial cells",
+                                  "22" = "Neurons",
+                                  "23" = "Neurons",
+                                  "24" = "B-cells")
+
+DimPlot(object = seurat_integrated_mouse, 
+        reduction = "umap", 
+        label = TRUE,
+        label.size = 3,
+        repel = TRUE) +
+        labs(title = "UMAP visualisation shows the different celltypes \n for the resolution 0.8 mouse") +
+        scale_fill_lancet(name="Celltypes")
+```
+
+```{r}
+n_cells0.8.long <- pivot_longer(n_cells0.8, cols="0":"24", names_to = "ClusterID", values_to = "Occurances", values_drop_na = TRUE)
+```
+
+```{r}
+plt_0.8 <- ggplot(n_cells0.8.long,aes(ClusterID, singlr_labels)) +
+  geom_tile(aes(fill=Occurances)) +  
+  geom_text(aes(label = round(Occurances, 1)), size=2) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(y="Celltypes")
+
+plt_0.8
+```
+
+```{r}
+save(seurat_integrated, file="add path were you want to save the seurat object with the renamed idents")
+```
