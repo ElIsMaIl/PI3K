@@ -84,7 +84,7 @@ subset_control %>%
   	ylab("Cell density") +
   	geom_vline(xintercept = 500)+
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("nUMi from the control xenografts")+
+  	ggtitle("nUMi from the untreated xenografts")+
     scale_fill_lancet()
 
 #Gene Count
@@ -94,7 +94,7 @@ subset_control %>%
   	scale_x_log10() + 
   	geom_vline(xintercept = 300)+
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("nGene from the control xenografts")+
+  	ggtitle("nGene from the untreated xenografts")+
     scale_fill_lancet()
 
 #joint filtering effect
@@ -118,7 +118,7 @@ subset_control %>%
   	scale_x_log10() +
   	geom_vline(xintercept = 2)+
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("Mitochondrial gene expression in [%] \n from the control xenografts")+
+  	ggtitle("Mitochondrial gene expression in [%] \n from the untreated xenografts")+
     scale_fill_lancet()
 ```
 
@@ -554,7 +554,7 @@ plt_merged
 
 #Transcript analysis
 
-```{r}
+```{r  load-data}
 umi_counts_merged <- read_delim("E://CCCC/PI3K/data/SuplementaryFiles/CSVFiles/umi_count_merged.csv")
 ```
 
@@ -576,21 +576,52 @@ seurat_integrated_filtered_mouse <- readRDS("E://CCCC/PI3K/data/SeuratObjects/de
 ```
 
 ```{r}
-UMAP_mouse <- DimPlot(seurat_integrated_mouse, reduction = "umap", group.by = "Labels", cols = c("red", "grey", "lightgrey")) + ggtitle("UMAP mouse cells")
-UMAP_mouse
+DimPlot(seurat_integrated, reduction = "umap", group.by = "Labels", cols = c("red", "grey", "lightgrey")) + ggtitle("UMAP mouse cells")
+DimPlot(seurat_integrated, reduction = "umap", group.by = "Sample_Tag") + ggtitle("UMAP mouse cells by conditions")
 ```
 
 ```{r}
 seurat_integrated_filtered_mouse <- RunUMAP(seurat_integrated_filtered_mouse, dims = 1:30)
-DimPlot(seurat_integrated_filtered_mouse, reduction = "umap", group.by = "Sample_Tag") + ggtitle("UMAP mouse cells by conditions")
+DimPlot(seurat_integrated_filtered_mouse, reduction = "umap", group.by = "Labels", cols = c("red", "grey", "lightgrey")) + ggtitle("UMAP filtered mouse cells")
+DimPlot(seurat_integrated_filtered_mouse, reduction = "umap", group.by = "Sample_Tag") + ggtitle("UMAP filtered mouse cells by conditions")
 ```
 
 ```{r}
-metadata_mouse <- seurat_integrated_mouse@meta.data
+#selects the xenograft and labels columns from the metadata 
+metadata_mouse <- seurat_integrated@meta.data
 metadata_mouse %>% select(2,26) -> metadata_mouse
 table(metadata_mouse)
 ```
 
 ```{r}
+#generates the counts and probabilities for each Label/Xenograft
 prop.table(table(metadata_mouse))
+```
+
+```{r load-data}
+seurat_integrated_filtered_renamedidents <- readRDS("E://CCCC/PI3K/data/SeuratObjects/cellfiltering_umi/Mouse/SingleR/seurat_integrated_singleR.rds")
+```
+
+```{r}
+DimPlot(object = seurat_integrated_filtered_renamedidents, 
+        reduction = "umap", 
+        label = TRUE,
+        label.size = 3,
+        repel = TRUE) +
+        labs(title = "UMAP visualisation shows the different celltypes \n for the resolution 0.4 mouse") +
+        scale_fill_lancet(name="Celltypes")
+```
+
+```{r}
+n_cells0.4.long <- readRDS("E://CCCC/PI3K/data/SeuratObjects/celltypeIdentification/Mouse/SingleR/n_cells0.4_mouse.rds")
+```
+
+```{r}
+plt_0.4 <- ggplot(n_cells0.4.long_mouse,aes(ClusterID, singlr_labels)) +
+  geom_tile(aes(fill=Occurances)) +  
+  geom_text(aes(label = round(Occurances, 1)), size=2) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(y="Celltypes")
+
+plt_0.4
 ```

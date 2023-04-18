@@ -53,8 +53,8 @@ seurat_integrated <- AddMetaData(seurat_integrated, umi_counts_merged_combined$L
 seurat_integrated_mouse <- AddMetaData(seurat_integrated_mouse, umi_counts_merged_combined_mouse$Labels, col.name = "Labels")
 
 #subset Seurat
-seurat_integrated_filtered_human <- subset(seurat_integrated, subset=Labels != "unique_mouse")
-seurat_integrated_filtered_mouse <- subset(seurat_integrated_mouse, subset= Labels != "unique_human")
+seurat_integrated_filtered_human <- subset(seurat_integrated, subset=Labels != "mainly_mouse")
+seurat_integrated_filtered_mouse <- subset(seurat_integrated_mouse, subset= Labels != "mainly_human")
 
 saveRDS(seurat_integrated,"E://CCCC/PI3K/data/SeuratObjects/cellfiltering_umi/Human/seurat_integrated_with_spec_labels.rds")
 saveRDS(seurat_integrated_mouse,"E://CCCC/PI3K/data/SeuratObjects/cellfiltering_umi/Mouse/seurat_integrated_with_spec_labels_mouse.rds")

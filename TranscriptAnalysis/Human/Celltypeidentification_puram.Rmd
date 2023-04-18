@@ -43,8 +43,6 @@ seurat_integrated_filtered <- AddMetaData(seurat_integrated_filtered, metadata =
 ```
 
 ```{r}
-seurat_integrated_filtered$predicted.match <- seurat_integrated_filtered$predicted.id == puram_sct$cell.type
-table(seurat_integrated_filtered$predicted.match)
 table(seurat_integrated_filtered$predicted.id)
 ```
 
@@ -88,18 +86,16 @@ DimPlot(seurat_integrated_filtered,
 ```
 ```{r}
 seurat_integrated_filtered_renamedIdents <- RenameIdents(object = seurat_integrated_filtered,
-                                  "0" = "Dendritic",
-                                  "1" = "Dendritic",
-                                  "2" = "Dendritic",
-                                  "3" = "Dendritic",
-                                  "4" = "Dendritic",
-                                  "5" = "Dendritic",
-                                  "6" = "malignant",
+                                  "0" = "malignant",
+                                  "1" = "malignant",
+                                  "2" = "malignant",
+                                  "3" = "malignant",
+                                  "4" = "malignant",
+                                  "5" = "malignant",
+                                  "6" = "Macrophage",
                                   "7" = "malignant",
                                   "8" = "malignant",
-                                  "9" = "malignant",
-                                  "10" = "malignant",
-                                  "11" = "Dendritic")
+                                  "9" = "malignant")
 
 DimPlot(object = seurat_integrated_filtered_renamedIdents, 
         reduction = "umap", 
@@ -111,7 +107,7 @@ DimPlot(object = seurat_integrated_filtered_renamedIdents,
 ```
 
 ```{r}
-n_cells0.4.long <- pivot_longer(n_cells0.4, cols="0":"11", names_to = "ClusterID", values_to = "Occurances", values_drop_na = TRUE)
+n_cells0.4.long <- pivot_longer(n_cells0.4, cols="0":"9", names_to = "ClusterID", values_to = "Occurances", values_drop_na = TRUE)
 plt_0.4 <- ggplot(n_cells0.4.long,aes(ClusterID, predicted.id)) +
   geom_tile(aes(fill=Occurances)) +  
   geom_text(aes(label = round(Occurances, 1)), size=2) +

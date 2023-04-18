@@ -84,7 +84,7 @@ subset_control %>%
   	ylab("Cell density") +
   	geom_vline(xintercept = 500)+
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("nUMi from the control xenografts")+
+  	ggtitle("nUMi from the untreated xenografts")+
     scale_fill_lancet()
 
 #Gene Count
@@ -94,7 +94,7 @@ subset_control %>%
   	scale_x_log10() + 
   	geom_vline(xintercept = 300)+
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("nGene from the control xenografts")+
+  	ggtitle("nGene from the untreated xenografts")+
     scale_fill_lancet()
 
 #joint filtering effect
@@ -118,7 +118,7 @@ subset_control %>%
   	scale_x_log10() +
   	geom_vline(xintercept = 2)+
     theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  	ggtitle("Mitochondrial gene expression in [%] \n from the control xenografts")+
+  	ggtitle("Mitochondrial gene expression in [%] \n from the untreated xenografts")+
     scale_fill_lancet()
 ```
 
@@ -601,33 +601,36 @@ sp + geom_abline() +
 
 #Celltype identification demultiplexed
 
-```{r}
+```{r load-data}
 seurat_integrated <- readRDS("E://CCCC/PI3K/data/SeuratObjects/cellfiltering_umi/Human/seurat_integrated_with_spec_labels.rds")
 seurat_integrated_filtered_human <- readRDS("E://CCCC/PI3K/data/SeuratObjects/demultiplexed/Human/seurat_integrated_filtered_human.rds")
 ```
 
 ```{r}
-UMAP_human <- DimPlot(seurat_integrated, reduction = "umap", group.by= "Labels", cols = c("red","lightgrey","purple")) + ggtitle("UMAP human cells")
-UMAP_human
+DimPlot(seurat_integrated, reduction = "umap", group.by= "Labels", cols = c("red","lightgrey","purple")) + ggtitle("UMAP human cells")
+DimPlot(seurat_integrated, reduction = "umap", group.by = "Sample_Tag") + ggtitle("UMAP human cells by conditions")
 ```
 
 ```{r}
 seurat_integrated_filtered_human <- RunUMAP(seurat_integrated_filtered_human, dims = 1:30)
-DimPlot(seurat_integrated_filtered_human, reduction = "umap", group.by = "Sample_Tag") + ggtitle("UMAP human cells by conditions")
+DimPlot(seurat_integrated, reduction = "umap", group.by= "Labels", cols = c("red","lightgrey","purple")) + ggtitle("UMAP filtered human cells")
+DimPlot(seurat_integrated_filtered_human, reduction = "umap", group.by = "Sample_Tag") + ggtitle("UMAP filtered human cells by conditions")
 ```
 
-```{r}
+```{r select-xenograft-and-labels-from-metadata}
+#selects the xenograft and labels columns from the metadata 
 metadata <- seurat_integrated@meta.data
 metadata %>% select(2,26) -> metadata
 table(metadata)
 ```
 
 ```{r}
+#generates the counts and probabilities for each Label/Xenograft
 prop.table(table(metadata))
 ```
 
-```{r}
-seurat_integrated_renamedIdents <- readRDS("E://CCCC/PI3K/data/SeuratObjects/celltypeIdentification/Human/Puram/seurat_integrated_puram.rds")
+```{r load-data}
+seurat_integrated_renamedIdents <- readRDS("E://CCCC/PI3K/data/SeuratObjects/cellfiltering_umi/Human/Puram/seurat_integrated_filtered_puram.rds")
 ```
 
 ```{r}
